@@ -1,0 +1,14 @@
+.venv/
+__pycache__/
+*.pyc
+.env
+.DS_Store
+
+# Generated / large artifacts — regenerable via `python -m src.run --all`
+data/raw/*.pdf
+data/text/*.txt
+data/cache/
+data/statements.db
+
+# dashboard/data.json is intentionally committed so the dashboard runs on a
+# fresh clone (public-statement analysis only, no secrets) — see README.

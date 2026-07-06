@@ -1,0 +1,59 @@
+# Statement Auditor — single source of configuration.
+# Secrets (ANTHROPIC_API_KEY) come from the environment, never from here.
+
+models:
+  # Pass 1: fast, cheap claim extraction.
+  extraction: claude-haiku-4-5
+  # Pass 2: rubric scoring with evidence citation.
+  scoring: claude-sonnet-5
+  # Local sentence-embedding model for the year-over-year diff.
+  embedding: sentence-transformers/all-MiniLM-L6-v2
+
+thresholds:
+  # Cosine similarity at or above which a paragraph counts as "unchanged"
+  # from the prior year (dimension 7). Calibrated on the Tesco 2024->2025 pair:
+  # at 0.92 the boundary admits paragraphs where only figures changed (e.g.
+  # "USD 2.7m" vs "USD 3.6m", sim 0.920), which are not "substantially identical".
+  # At >=0.95 every inspected flagged pair is genuine verbatim reuse.
+  boilerplate_similarity: 0.95
+  # If the share of unchanged paragraphs exceeds this, cap the overall
+  # score and raise the "substantially unchanged" flag.
+  boilerplate_cap_share: 0.6
+  # The cap applied when boilerplate_cap_share is exceeded.
+  boilerplate_overall_cap: 2.0
+
+llm:
+  # Pass 1 (extraction) output cap. Claim JSON is small.
+  max_tokens: 8000
+  # Pass 2 (scoring) output cap. Higher so Sonnet 5 adaptive thinking can't
+  # starve the JSON and cause a truncation-driven (pipeline-caused) failure.
+  scoring_max_tokens: 16000
+  # Pass 1 input budget (characters). Statements longer than this are
+  # chunked; claims from all chunks are merged.
+  chunk_char_budget: 40000
+  # Retry a failed structured-output parse this many times (with the
+  # validation error appended) before logging and skipping.
+  parse_retries: 1
+  # Scoring is sampled this many times per dimension and the MEDIAN score is
+  # taken (Sonnet 5 rejects temperature, so this is how we tame the run-to-run
+  # variance on borderline dimensions). Each sample is cached independently, so
+  # re-runs are deterministic. Set to 1 to disable median-of-N.
+  scoring_samples: 3
+
+# Hedge lexicon for the dimension-7 hedge-density metric
+# (occurrences per 1000 words across the whole document).
+hedge_lexicon:
+  - "committed to"
+  - "strive"
+  - "aim to"
+  - "expect"
+  - "endeavour"
+  - "where possible"
+  - "as appropriate"
+
+paths:
+  raw_dir: data/raw          # downloaded PDFs, named {company_slug}_{year}.pdf
+  text_dir: data/text        # extracted plain text
+  cache_dir: data/cache      # cached LLM responses, keyed on (model, prompt hash)
+  db_path: data/statements.db
+  sources_csv: sources.csv

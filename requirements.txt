@@ -1,0 +1,14 @@
+# Core
+anthropic>=0.40
+pydantic>=2.0
+PyYAML>=6.0
+
+# Ingestion
+requests>=2.31
+pymupdf>=1.24           # PDF -> text (best reading-order for multi-column layouts)
+
+# Year-over-year diff (dimension 7)
+# NOTE: torch/sentence-transformers have no wheels for Python 3.14 yet.
+# Use a 3.11 or 3.12 virtualenv (see README).
+sentence-transformers>=3.0
+numpy>=1.26

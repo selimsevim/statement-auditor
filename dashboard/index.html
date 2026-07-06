@@ -1,0 +1,348 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Statement Auditor</title>
+<style>
+  /* ---- palette (validated reference instance) ---- */
+  :root {
+    --surface-1:#fcfcfb; --page:#f9f9f7;
+    --ink:#0b0b0b; --ink-2:#52514e; --muted:#898781;
+    --grid:#e1e0d9; --axis:#c3c2b7; --border:rgba(11,11,11,0.10);
+    --accent:#256abf;                 /* overall-score bars (magnitude) */
+    --track:#eceae4;                  /* bar track */
+    --critical:#d03b3b;               /* YoY "unchanged" (boilerplate) */
+    --critical-wash:rgba(208,59,59,0.10);
+    --dim-1:#2a78d6; --dim-2:#1baf7a; --dim-3:#eda100;
+    --dim-4:#008300; --dim-5:#4a3aa7; --dim-6:#e34948;
+    --dim-wash:0.16;                  /* highlight alpha */
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --surface-1:#1a1a19; --page:#0d0d0d;
+      --ink:#fff; --ink-2:#c3c2b7; --muted:#898781;
+      --grid:#2c2c2a; --axis:#383835; --border:rgba(255,255,255,0.10);
+      --accent:#3987e5; --track:#2c2c2a;
+      --critical:#e66767; --critical-wash:rgba(230,103,103,0.16);
+      --dim-1:#3987e5; --dim-2:#199e70; --dim-3:#c98500;
+      --dim-4:#008300; --dim-5:#9085e9; --dim-6:#e66767;
+      --dim-wash:0.28;
+    }
+  }
+  :root[data-theme="dark"] {
+    --surface-1:#1a1a19; --page:#0d0d0d; --ink:#fff; --ink-2:#c3c2b7; --muted:#898781;
+    --grid:#2c2c2a; --axis:#383835; --border:rgba(255,255,255,0.10);
+    --accent:#3987e5; --track:#2c2c2a; --critical:#e66767; --critical-wash:rgba(230,103,103,0.16);
+    --dim-1:#3987e5; --dim-2:#199e70; --dim-3:#c98500; --dim-4:#008300; --dim-5:#9085e9; --dim-6:#e66767;
+    --dim-wash:0.28;
+  }
+
+  * { box-sizing:border-box; }
+  html,body { margin:0; }
+  body {
+    background:var(--page); color:var(--ink);
+    font:15px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap { max-width:1080px; margin:0 auto; padding:0 24px; }
+  a { color:inherit; }
+
+  /* masthead */
+  header.mast { border-bottom:1px solid var(--border); background:var(--surface-1); }
+  .mast-top { display:flex; align-items:baseline; justify-content:space-between; gap:16px; padding-top:26px; }
+  h1 { font-family:Georgia,"Times New Roman",serif; font-weight:600; font-size:30px; letter-spacing:-0.01em; margin:0; }
+  .tagline { color:var(--ink-2); margin:6px 0 0; max-width:60ch; }
+  .mast-tools { display:flex; gap:10px; align-items:center; white-space:nowrap; }
+  select, button.btn {
+    font:inherit; color:var(--ink); background:var(--surface-1);
+    border:1px solid var(--axis); border-radius:7px; padding:6px 10px; cursor:pointer;
+  }
+  .disclaimer { color:var(--muted); font-size:12.5px; margin:14px 0 0; }
+
+  /* tabs */
+  nav.tabs { display:flex; gap:2px; margin-top:18px; }
+  nav.tabs button {
+    font:inherit; background:none; border:none; border-bottom:2px solid transparent;
+    color:var(--ink-2); padding:9px 14px; cursor:pointer; border-radius:0;
+  }
+  nav.tabs button[aria-selected="true"] { color:var(--ink); border-bottom-color:var(--accent); font-weight:600; }
+
+  main { padding:26px 0 8px; }
+  h2.view-title { font-family:Georgia,serif; font-weight:600; font-size:21px; margin:0 0 4px; }
+  .view-note { color:var(--ink-2); margin:0 0 18px; font-size:13.5px; }
+
+  /* table */
+  table { width:100%; border-collapse:collapse; }
+  th,td { text-align:left; padding:11px 10px; border-bottom:1px solid var(--grid); vertical-align:middle; }
+  th { font-size:12px; letter-spacing:0.04em; text-transform:uppercase; color:var(--muted); cursor:pointer; user-select:none; font-weight:600; }
+  th.sorted::after { content:" "attr(data-arrow); color:var(--ink-2); }
+  tbody tr { cursor:pointer; }
+  tbody tr:hover { background:var(--track); }
+  td.num { font-variant-numeric:tabular-nums; }
+
+  /* bars */
+  .bar-cell { display:flex; align-items:center; gap:10px; min-width:190px; }
+  .track { flex:1; height:8px; background:var(--track); border-radius:4px; overflow:hidden; }
+  .fill { height:100%; border-radius:4px; }
+  .score-num { font-variant-numeric:tabular-nums; font-weight:600; min-width:34px; text-align:right; }
+
+  .chip { display:inline-flex; align-items:center; gap:5px; font-size:11.5px; font-weight:600;
+          padding:2px 8px; border-radius:999px; border:1px solid var(--border); white-space:nowrap; }
+  .chip.flag { color:var(--critical); border-color:var(--critical); }
+  .chip.fallback { color:var(--ink-2); }
+
+  /* scorecard */
+  .sc-head { display:flex; flex-wrap:wrap; align-items:baseline; gap:14px; margin-bottom:6px; }
+  .sc-head .big { font-size:34px; font-weight:700; font-variant-numeric:tabular-nums; }
+  .sc-head .sub { color:var(--ink-2); }
+  .tiles { display:flex; gap:14px; flex-wrap:wrap; margin:16px 0 22px; }
+  .tile { border:1px solid var(--border); border-radius:10px; padding:12px 16px; background:var(--surface-1); min-width:150px; }
+  .tile .k { color:var(--muted); font-size:12px; text-transform:uppercase; letter-spacing:0.04em; }
+  .tile .v { font-size:22px; font-weight:700; font-variant-numeric:tabular-nums; margin-top:3px; }
+  .tile .v small { font-size:13px; font-weight:500; color:var(--ink-2); }
+
+  .dim { border-bottom:1px solid var(--grid); }
+  .dim summary { display:flex; align-items:center; gap:12px; padding:12px 4px; cursor:pointer; list-style:none; }
+  .dim summary::-webkit-details-marker { display:none; }
+  .dim .swatch { width:10px; height:10px; border-radius:3px; flex:none; }
+  .dim .dname { flex:1; }
+  .dim .dname .s54 { color:var(--muted); font-size:12px; margin-left:6px; }
+  .dim .dtrack { width:120px; height:8px; background:var(--track); border-radius:4px; overflow:hidden; }
+  .dim .expand { padding:4px 4px 18px 34px; }
+  .dim .just { color:var(--ink-2); margin:0 0 12px; }
+  blockquote.ev { margin:0 0 8px; padding:8px 12px; border-left:3px solid var(--axis);
+                  background:var(--track); border-radius:0 6px 6px 0; font-size:13.5px; }
+
+  /* legend */
+  .legend { display:flex; flex-wrap:wrap; gap:14px; margin:0 0 16px; font-size:13px; }
+  .legend span { display:inline-flex; align-items:center; gap:6px; color:var(--ink-2); }
+  .legend i { width:11px; height:11px; border-radius:3px; display:inline-block; }
+
+  /* evidence view */
+  .doc { background:var(--surface-1); border:1px solid var(--border); border-radius:10px;
+         padding:22px 26px; white-space:pre-wrap; font-size:14px; line-height:1.7;
+         max-height:70vh; overflow:auto; }
+  .doc mark { border-radius:3px; padding:0.5px 1px; color:inherit; }
+
+  /* yoy */
+  .yoy-controls { display:flex; align-items:center; gap:16px; margin-bottom:14px; flex-wrap:wrap; }
+  .yoy-sum { font-size:15px; }
+  .yoy-sum b { font-variant-numeric:tabular-nums; }
+  .pair { display:grid; grid-template-columns:1fr 1fr; gap:14px; padding:12px 0; border-bottom:1px solid var(--grid); }
+  .pair .col { font-size:13px; }
+  .pair .yr { color:var(--muted); font-size:11px; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:4px; }
+  .pair .sim { grid-column:1/3; font-size:11.5px; color:var(--muted); font-variant-numeric:tabular-nums; }
+  .pair.unchanged { background:var(--critical-wash); border-radius:8px; padding:12px; }
+  .pair.unchanged .yr { color:var(--critical); }
+  .pager { display:flex; gap:10px; align-items:center; margin-top:16px; }
+
+  footer.foot { color:var(--muted); font-size:12px; border-top:1px solid var(--border);
+                margin-top:30px; padding:16px 0 40px; }
+  .empty { color:var(--ink-2); padding:30px 0; }
+</style>
+</head>
+<body>
+<header class="mast">
+  <div class="wrap">
+    <div class="mast-top">
+      <div>
+        <h1>Statement Auditor</h1>
+        <p class="tagline">Disclosure-quality scoring of corporate modern slavery statements, against
+          the six content areas of UK Modern Slavery Act 2015 <a href="https://www.legislation.gov.uk/ukpga/2015/30/section/54">s.54(5)</a>.</p>
+      </div>
+      <div class="mast-tools">
+        <select id="company" aria-label="Select company"></select>
+        <button class="btn" id="theme" title="Toggle light/dark">◐</button>
+      </div>
+    </div>
+    <nav class="tabs" id="tabs">
+      <button data-view="leaderboard" aria-selected="true">Leaderboard</button>
+      <button data-view="scorecard" aria-selected="false">Scorecard</button>
+      <button data-view="evidence" aria-selected="false">Evidence</button>
+      <button data-view="yoy" aria-selected="false">Year&#8209;over&#8209;year</button>
+    </nav>
+    <p class="disclaimer">Automated analysis of public statements — a measure of disclosure specificity,
+      not a legal assessment, and not a claim about any company's labour practices.</p>
+  </div>
+</header>
+
+<main><div class="wrap" id="view"></div></main>
+
+<footer class="foot"><div class="wrap" id="foot">
+  Automated analysis of public statements, not a legal assessment.
+</div></footer>
+
+<script>
+const DIM_COLORS = {1:'var(--dim-1)',2:'var(--dim-2)',3:'var(--dim-3)',4:'var(--dim-4)',5:'var(--dim-5)',6:'var(--dim-6)'};
+const state = { data:null, view:'leaderboard', company:null, sort:{key:'overall_score',dir:-1},
+                yoy:{unchangedOnly:false, page:0, per:25} };
+const $ = (s,r=document)=>r.querySelector(s);
+const esc = s => s.replace(/[&<>]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+const key = s => `${s.slug}_${s.year}`;
+const fmt = n => (n==null? '—' : (Math.round(n*100)/100).toString());
+
+async function boot(){
+  state.data = await (await fetch('data.json')).json();
+  const sel = $('#company');
+  state.data.statements.forEach(s=>{
+    const o=document.createElement('option'); o.value=key(s);
+    o.textContent=`${s.company_name} (${s.year})`; sel.appendChild(o);
+  });
+  state.company = key(state.data.statements[0]);
+  sel.value = state.company;
+  sel.onchange = e=>{ state.company=e.target.value; state.yoy.page=0; render(); };
+  $('#tabs').addEventListener('click', e=>{
+    const b=e.target.closest('button[data-view]'); if(!b) return;
+    setView(b.dataset.view);
+  });
+  $('#theme').onclick = ()=>{
+    const cur = document.documentElement.getAttribute('data-theme');
+    const next = cur==='dark' ? 'light' : cur==='light' ? 'dark'
+                 : (matchMedia('(prefers-color-scheme: dark)').matches ? 'light':'dark');
+    document.documentElement.setAttribute('data-theme', next);
+  };
+  render();
+}
+function setView(v){ state.view=v; [...$('#tabs').children].forEach(b=>b.setAttribute('aria-selected', b.dataset.view===v)); render(); }
+function stmt(){ return state.data.statements.find(s=>key(s)===state.company); }
+function render(){ ({leaderboard:leaderboard, scorecard:scorecard, evidence:evidence, yoy:yoy})[state.view](); }
+
+/* ---------- Leaderboard ---------- */
+function leaderboard(){
+  const cols = [
+    {k:'company_name',label:'Company',num:false},
+    {k:'sector',label:'Sector',num:false},
+    {k:'year',label:'Year',num:true},
+    {k:'overall_score',label:'Overall',num:true},
+    {k:'hedge',label:'Hedge /1k',num:true},
+    {k:'flag',label:'Flags',num:false},
+  ];
+  const rows = [...state.data.statements];
+  const {key:sk,dir}=state.sort;
+  const val = s => sk==='hedge'? s.boilerplate.hedge_density : sk==='flag'? (s.boilerplate_flag?1:0) : s[sk];
+  rows.sort((a,b)=>{
+    let d = (val(a)>val(b)?1:val(a)<val(b)?-1:0)*dir;
+    if(d===0) d = a.boilerplate.hedge_density - b.boilerplate.hedge_density; // deterministic tie-break
+    return d;
+  });
+  const th = cols.map(c=>`<th data-k="${c.k}" class="${sk===c.k?'sorted':''}" data-arrow="${dir<0?'▼':'▲'}">${c.label}</th>`).join('');
+  const body = rows.map(s=>`
+    <tr data-co="${key(s)}">
+      <td>${esc(s.company_name)}</td>
+      <td>${esc(s.sector)}</td>
+      <td class="num">${s.year}</td>
+      <td><div class="bar-cell"><div class="track"><div class="fill" style="width:${s.overall_score/4*100}%;background:var(--accent)"></div></div><span class="score-num">${fmt(s.overall_score)}</span></div></td>
+      <td class="num">${fmt(s.boilerplate.hedge_density)}</td>
+      <td>${s.boilerplate_flag?`<span class="chip flag">⚑ ${Math.round(s.boilerplate.share*100)}% unchanged</span>`:''}</td>
+    </tr>`).join('');
+  $('#view').innerHTML = `
+    <h2 class="view-title">Leaderboard</h2>
+    <p class="view-note">All statements ranked by overall disclosure-quality score (mean of six dimensions, boilerplate-capped). Click a column to sort, a row to open its scorecard.</p>
+    <table><thead><tr>${th}</tr></thead><tbody>${body}</tbody></table>`;
+  $('#view').querySelectorAll('th').forEach(h=>h.onclick=()=>{
+    const k=h.dataset.k; state.sort = {key:k, dir: state.sort.key===k? -state.sort.dir : -1}; leaderboard();
+  });
+  $('#view').querySelectorAll('tr[data-co]').forEach(r=>r.onclick=()=>{ state.company=r.dataset.co; $('#company').value=state.company; setView('scorecard'); });
+}
+
+/* ---------- Scorecard ---------- */
+function scorecard(){
+  const s = stmt();
+  const bp = s.boilerplate;
+  const tiles = `
+    <div class="tiles">
+      <div class="tile"><div class="k">Overall</div><div class="v">${fmt(s.overall_score)}<small> / 4</small></div></div>
+      <div class="tile"><div class="k">Boilerplate vs prior yr</div><div class="v">${bp.share==null?'—':Math.round(bp.share*100)+'%'}${bp.share!=null?`<small> (${bp.n_unchanged}/${bp.n_paragraphs})</small>`:''}</div></div>
+      <div class="tile"><div class="k">Hedge density</div><div class="v">${fmt(bp.hedge_density)}<small> /1k words</small></div></div>
+    </div>`;
+  const dims = s.dimensions.map(d=>{
+    const c = DIM_COLORS[d.dimension];
+    const ev = d.evidence.length
+      ? d.evidence.map(e=>`<blockquote class="ev" style="border-left-color:${c}">${esc(e.quote)}</blockquote>`).join('')
+      : `<p class="just">No evidence found — scored 0.</p>`;
+    return `<details class="dim">
+      <summary>
+        <span class="swatch" style="background:${c}"></span>
+        <span class="dname">${esc(d.name)}<span class="s54">s.${d.s54}</span>${d.fallback?' <span class="chip fallback" title="No dimension-specific claims were extracted; re-scored from the full statement text, capped at 2.">fallback</span>':''}</span>
+        <span class="dtrack"><span class="fill" style="width:${d.score/4*100}%;background:${c};display:block;height:100%"></span></span>
+        <span class="score-num">${d.score}</span>
+      </summary>
+      <div class="expand"><p class="just">${esc(d.justification)}</p>${ev}</div>
+    </details>`;
+  }).join('');
+  $('#view').innerHTML = `
+    <div class="sc-head"><span class="big">${fmt(s.overall_score)}</span>
+      <span class="sub">${esc(s.company_name)} · ${esc(s.sector)} · ${s.year}</span>
+      ${s.boilerplate_flag?`<span class="chip flag">⚑ substantially unchanged from ${bp.prior_year}</span>`:''}</div>
+    <p class="view-note">Each dimension scored 0–4 against the s.54(5) rubric. Expand a dimension for its justification and verbatim, source-verified evidence. “fallback” marks a dimension re-scored from full text (capped at 2) because no dimension-specific claims were extracted.</p>
+    ${tiles}
+    <div>${dims}</div>`;
+}
+
+/* ---------- Evidence ---------- */
+function evidence(){
+  const s = stmt();
+  const ranges=[];
+  s.dimensions.forEach(d=>d.evidence.forEach(e=>{ if(e.start>=0) ranges.push({start:e.start,end:e.end,dim:d.dimension,name:d.name,score:d.score}); }));
+  ranges.sort((a,b)=>a.start-b.start || b.end-a.end);
+  // greedy non-overlapping highlight
+  let html='', cur=0, lastEnd=0;
+  const t=s.text;
+  for(const r of ranges){
+    if(r.start<lastEnd) continue;            // drop overlap
+    html += esc(t.slice(cur, r.start));
+    const c = DIM_COLORS[r.dim];
+    html += `<mark data-dim="${r.dim}" title="${esc(r.name)} — score ${r.score}" style="background:color-mix(in srgb, ${c} calc(var(--dim-wash)*100%), transparent); box-shadow:inset 2px 0 0 ${c}">`+esc(t.slice(r.start,r.end))+`</mark>`;
+    cur=r.end; lastEnd=r.end;
+  }
+  html += esc(t.slice(cur));
+  const legend = s.dimensions.map(d=>`<span><i style="background:${DIM_COLORS[d.dimension]}"></i>${esc(d.name)} (${d.score})</span>`).join('');
+  $('#view').innerHTML = `
+    <h2 class="view-title">Evidence — ${esc(s.company_name)} ${s.year}</h2>
+    <p class="view-note">The full extracted statement with source-verified evidence highlighted by dimension. Highlights are positioned by stored character offsets — the exact text the score cites.</p>
+    <div class="legend">${legend}</div>
+    <div class="doc">${html}</div>`;
+}
+
+/* ---------- Year-over-year ---------- */
+function yoy(){
+  const s = stmt();
+  const pairs = s.paragraph_pairs;
+  if(!pairs.length){
+    $('#view').innerHTML = `<h2 class="view-title">Year-over-year</h2>
+      <p class="empty">No prior-year statement on file for ${esc(s.company_name)}. The diff needs two consecutive years (only Tesco has a pair in this set).</p>`;
+    return;
+  }
+  const unchanged = pairs.filter(p=>p.unchanged).length;
+  const shown = state.yoy.unchangedOnly ? pairs.filter(p=>p.unchanged) : pairs;
+  const per=state.yoy.per, pages=Math.max(1,Math.ceil(shown.length/per));
+  state.yoy.page=Math.min(state.yoy.page, pages-1);
+  const page = shown.slice(state.yoy.page*per, state.yoy.page*per+per);
+  const rows = page.map(p=>`
+    <div class="pair ${p.unchanged?'unchanged':''}">
+      <div class="col"><div class="yr">${s.year}</div>${esc(p.cur_text)}</div>
+      <div class="col"><div class="yr">${s.boilerplate.prior_year}</div>${esc(p.prior_text)}</div>
+      <div class="sim">cosine ${p.similarity.toFixed(3)}${p.unchanged?' · carried over':''}</div>
+    </div>`).join('');
+  $('#view').innerHTML = `
+    <h2 class="view-title">Year-over-year — ${esc(s.company_name)}</h2>
+    <p class="yoy-sum"><b>${Math.round(unchanged/pairs.length*100)}%</b> of this statement is substantially identical to ${s.boilerplate.prior_year} — <b>${unchanged}</b> of <b>${pairs.length}</b> paragraphs carried over (cosine ≥ ${state.data.boilerplate_similarity_threshold}).</p>
+    <div class="yoy-controls">
+      <label><input type="checkbox" id="uo" ${state.yoy.unchangedOnly?'checked':''}> Show carried-over paragraphs only</label>
+    </div>
+    <div>${rows}</div>
+    <div class="pager">
+      <button class="btn" id="prev" ${state.yoy.page<=0?'disabled':''}>← Prev</button>
+      <span>Page ${state.yoy.page+1} / ${pages} · ${shown.length} paragraphs</span>
+      <button class="btn" id="next" ${state.yoy.page>=pages-1?'disabled':''}>Next →</button>
+    </div>`;
+  $('#uo').onchange=e=>{ state.yoy.unchangedOnly=e.target.checked; state.yoy.page=0; yoy(); };
+  $('#prev').onclick=()=>{ state.yoy.page--; yoy(); };
+  $('#next').onclick=()=>{ state.yoy.page++; yoy(); };
+}
+
+boot();
+</script>
+</body>
+</html>
