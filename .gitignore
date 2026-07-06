@@ -12,3 +12,6 @@ data/statements.db
 
 # dashboard/data.json is intentionally committed so the dashboard runs on a
 # fresh clone (public-statement analysis only, no secrets) — see README.
+
+# Presenter notes — kept local, not published.
+DEMO.md
