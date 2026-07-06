@@ -51,7 +51,8 @@ def main() -> None:
     g = ap.add_mutually_exclusive_group(required=True)
     g.add_argument("--all", action="store_true", help="Process every row in sources.csv.")
     g.add_argument("--company", metavar="SLUG", help="Process a single company by slug.")
-    ap.add_argument("--force", action="store_true", help="Bypass LLM caches (re-extract and re-score).")
+    ap.add_argument("--force", action="store_true",
+                    help="Re-fetch, re-extract, and re-score, bypassing all caches.")
     args = ap.parse_args()
 
     cfg = load_config()
@@ -63,20 +64,21 @@ def main() -> None:
         print("No matching rows in sources.csv.")
         return
 
-    print("== fetch ==")
-    fetch_all(cfg, subset)
-    print("\n== extract ==")
-    extract_all(cfg, subset)
+    print("== fetch ==", flush=True)
+    fetch_all(cfg, subset, force=args.force)
+    print("\n== extract ==", flush=True)
+    extract_all(cfg, subset, force=args.force)
 
     conn = store.connect(cfg)
     store.init_db(conn)
     results: list[StatementScore] = []
 
-    print("\n== claims -> score -> diff -> persist ==")
-    for row in subset:
+    print("\n== claims -> score -> diff -> persist ==", flush=True)
+    for i, row in enumerate(subset, start=1):
         if not text_path(cfg, row).exists():
-            print(f"  {row.company_slug}_{row.year}: no extracted text — skipped")
+            print(f"  {row.company_slug}_{row.year}: no extracted text — skipped", flush=True)
             continue
+        print(f"  [{i}/{len(subset)}] {row.company_slug}_{row.year}: scoring…", flush=True)
         dim_scores = score_for_row(cfg, row, use_cache=not args.force) or []
         boilerplate, pairs = analyze_yoy(cfg, row, all_rows)
         statement = build_statement_score(cfg, row, dim_scores, boilerplate)
@@ -85,7 +87,7 @@ def main() -> None:
         note = ""
         if statement.boilerplate_flag:
             note = f"  [BOILERPLATE {round(boilerplate.boilerplate_share * 100)}%]"
-        print(f"  {row.company_slug}_{row.year}: overall {statement.overall_score}{note}")
+        print(f"      -> overall {statement.overall_score}{note}", flush=True)
 
     out = store.export_json(cfg, conn)
     conn.close()

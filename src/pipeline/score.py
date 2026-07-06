@@ -241,7 +241,13 @@ def score_for_row(cfg: Config, row, *, use_cache: bool = True) -> list[Dimension
     source = path.read_text(encoding="utf-8")
     idx = build_norm_index(source)
     claims = extraction.claims
-    return [score_dimension(cfg, d, claims, source, idx, use_cache=use_cache) for d in DIMENSIONS]
+    scores: list[DimensionScore] = []
+    for d in DIMENSIONS:
+        s = score_dimension(cfg, d, claims, source, idx, use_cache=use_cache)
+        tag = " (fallback)" if s.fallback else ""
+        print(f"        dim {d} {DIMENSIONS[d]['name']}: {s.score}{tag}", flush=True)
+        scores.append(s)
+    return scores
 
 
 def main() -> None:

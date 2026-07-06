@@ -97,7 +97,16 @@ def analyze_yoy(
     threshold = float(cfg.thresholds["boilerplate_similarity"])
     cur_paras = paragraphs(text)
     prev_paras = paragraphs(text_path(cfg, prev).read_text(encoding="utf-8"))
-    max_sim, best = max_similarities(cfg, cur_paras, prev_paras)
+    try:
+        max_sim, best = max_similarities(cfg, cur_paras, prev_paras)
+    except Exception as exc:  # embedding model unavailable (no network + no cache)
+        print(
+            f"    YoY skipped for {row.company_slug}_{row.year}: embedding model "
+            f"'{cfg.models['embedding']}' unavailable ({type(exc).__name__}). "
+            "Hedge density still reported; boilerplate share = n/a.",
+            flush=True,
+        )
+        return BoilerplateResult(prior_year=prev.year, hedge_density=hedge), []
 
     pairs = [
         ParagraphPair(

@@ -14,7 +14,8 @@ year-over-year boilerplate detection.
 Seven dimensions. Dimensions 1–6 map directly to the six recommended content
 areas in **section 54(5) of the UK Modern Slavery Act 2015**
 ([legislation.gov.uk](https://www.legislation.gov.uk/ukpga/2015/30/section/54)).
-The 0–4 rubric and dimension definitions are derived from that section.
+The six dimensions map directly to those content areas; the 0–4 scoring rubric is
+our own methodology, operationalized from them (it is not part of the Act).
 
 | # | Dimension | s.54(5) |
 |---|-----------|---------|
@@ -52,23 +53,23 @@ All LLM responses are cached on (model, prompt hash), so re-runs are free and de
 
 ## Dashboard
 
-Four views over `dashboard/data.json` (a single static page — plain HTML/JS, no build step, light/dark).
+A single static page (plain HTML/JS, no build step, light/dark) over
+`dashboard/data.json`. Two views.
 
-**Leaderboard** — all statements ranked by overall score; sortable; boilerplate flag.
+**Overview** — every company's disclosure score plotted by year. A downward step
+is a weaker statement than the year before; a red ring marks a boilerplate-capped
+year. Trajectory-first, no evidence — click any point or company to drill in.
 
-![Leaderboard](docs/screenshots/leaderboard.png)
+![Overview](docs/screenshots/overview.png)
 
-**Scorecard** — one company: six dimension bars, boilerplate + hedge tiles, each dimension expandable to its justification and source-verified evidence. A `fallback` badge marks any dimension re-scored from full text (capped at 2).
+**Company detail** (on click) — a year-over-year callout explains any change
+("capped at 2.0 because 70% is carried over from 2022"); a *thinnest disclosure*
+panel surfaces the weakest dimensions; each of the six dimensions expands to its
+justification and source-verified evidence (highlighted by stored character
+offset, never re-matched in the browser). Includes the side-by-side YoY diff and
+a link to the original statement PDF.
 
-![Scorecard](docs/screenshots/scorecard.png)
-
-**Evidence** — the full statement with evidence highlighted by dimension, positioned by stored character offsets (never re-matched in the browser).
-
-![Evidence](docs/screenshots/evidence.png)
-
-**Year-over-year** — side-by-side paragraphs with the "N% substantially identical" headline; carried-over-only toggle; paginated.
-
-![Year-over-year](docs/screenshots/year-over-year.png)
+![Company detail](docs/screenshots/detail.png)
 
 ## Repo layout
 
@@ -159,13 +160,14 @@ that each URL returns a real PDF and skips non-PDF landing pages.
 **Score stability (median-of-3).** Claude Sonnet 5 does not accept a temperature
 parameter, so to tame run-to-run variance each dimension is scored 3× and the
 median is taken (`scoring_samples` in `config.yaml`). Each sample is cached
-independently, so the committed cache/DB is **deterministic** — re-running the
-demo yields identical numbers. One dimension, **Policies**, is genuinely
-borderline between 2 ("general commitments") and 3 ("concrete mechanisms") for
-several statements; on a cold re-run (cache cleared) its median can still move by
-one point. Adopting median-of-3 shifted three overalls via Policies vs an earlier
-single-shot run — Tesco 2024 3.33→3.50, Tesco 2025 3.50→3.33, Barclays
-3.17→3.33; all other dimensions held.
+independently, so **the committed cache, `data/statements.db`, and
+`dashboard/data.json` are the canonical snapshot** — re-running against the cache
+yields identical numbers. Median-of-3 *narrows* run-to-run variance but does not
+eliminate it (Sonnet 5 does not accept a `temperature` parameter): any dimension
+sitting near a rubric boundary — Policies (2 vs 3) most often, but also Structure
+and others — can shift by ±1 on a **cache-cleared / `--force`** re-run, moving a
+company's overall by ~0.15–0.2. Treat the committed snapshot as the reference; a
+fresh cold run is a *different valid sample*, not a bug.
 
 **Single-dimension classification + zero-claim fallback.** Pass 1 assigns each
 claim to exactly one dimension. A sentence touching two dimensions (e.g. "Tier 1
@@ -199,5 +201,5 @@ Built incrementally, verifying each stage on real data before the next:
 - [x] **4. `score.py`** — rubric scoring, evidence verifier, median-of-3, zero-claim fallback
 - [x] **5. `diff.py`** — YoY boilerplate (calibrated threshold) + hedge density
 - [x] **6. SQLite persistence + `run.py` CLI** — end-to-end batch of 6 statements
-- [x] **7. Dashboard** — leaderboard · scorecard · evidence · YoY diff (light/dark, verified)
+- [x] **7. Dashboard** — overview trajectory chart + click-through company detail (evidence, gaps, YoY); light/dark, verified
 - [x] **8. Full registry batch + acceptance pass** — 11 statements / 7 companies; consecutive-year pairs sampled from the registry's CSV export; all four acceptance criteria verified

@@ -14,6 +14,7 @@ from pathlib import Path
 
 from .config import Config
 from .schemas import ParagraphPair, StatementScore
+from .sources import load_sources
 from .taxonomy import DIMENSIONS
 
 _SCHEMA = """
@@ -101,6 +102,7 @@ def export_json(cfg: Config, conn: sqlite3.Connection) -> Path:
     Statements are ordered by overall score (desc), then hedge density (asc) as a
     deterministic tie-break.
     """
+    source_url = {(r.company_slug, r.year): r.pdf_url for r in load_sources(cfg)}
     statements = []
     for s in conn.execute(
         "SELECT * FROM statements ORDER BY overall_score DESC, hedge_density ASC, slug"
@@ -138,6 +140,7 @@ def export_json(cfg: Config, conn: sqlite3.Connection) -> Path:
         statements.append({
             "slug": s["slug"], "year": s["year"], "company_name": s["company_name"],
             "sector": s["sector"], "overall_score": s["overall_score"],
+            "source_url": source_url.get((s["slug"], s["year"]), ""),
             "boilerplate_flag": bool(s["boilerplate_flag"]), "flags": json.loads(s["flags"]),
             "boilerplate": {
                 "prior_year": s["prior_year"], "share": s["boilerplate_share"],

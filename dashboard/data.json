@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-06T21:16:42+00:00",
+  "generated_at": "2026-07-06T23:38:13+00:00",
   "boilerplate_similarity_threshold": 0.95,
   "boilerplate_cap_share": 0.6,
   "statements": [
@@ -9,6 +9,7 @@
       "company_name": "Tesco PLC",
       "sector": "Retail",
       "overall_score": 3.5,
+      "source_url": "https://www.tescoplc.com/media/4h2d5o1x/modern-slavery-statement-2023_24_final.pdf",
       "boilerplate_flag": false,
       "flags": [],
       "boilerplate": {
@@ -224,6 +225,7 @@
       "company_name": "Canon Europe",
       "sector": "Technology",
       "overall_score": 3.5,
+      "source_url": "https://downloads.modern-slavery-statement-registry.service.gov.uk/pdf-published/4EBA45gT/2023/ms_statement-2022.pdf",
       "boilerplate_flag": false,
       "flags": [],
       "boilerplate": {
@@ -419,6 +421,7 @@
       "company_name": "Tesco PLC",
       "sector": "Retail",
       "overall_score": 3.33,
+      "source_url": "https://www.tescoplc.com/media/ahag4vn0/modern-slavery-statement-2024_25_v15.pdf",
       "boilerplate_flag": false,
       "flags": [],
       "boilerplate": {
@@ -3174,6 +3177,7 @@
       "company_name": "Barclays PLC",
       "sector": "Financial",
       "overall_score": 3.33,
+      "source_url": "https://home.barclays/content/dam/home-barclays/documents/citizenship/ESG/2024/Barclays-Group-Statement-on-Modern-Slavery-2024.pdf",
       "boilerplate_flag": false,
       "flags": [],
       "boilerplate": {
@@ -5047,6 +5051,7 @@
       "company_name": "Dell Technologies",
       "sector": "Technology",
       "overall_score": 3.17,
+      "source_url": "https://downloads.modern-slavery-statement-registry.service.gov.uk/pdf-published/nDCDc8Ua/2022/FY22%20Dell%20Technologies%20MSA%20Statement_Signed_01July2022.pdf",
       "boilerplate_flag": false,
       "flags": [],
       "boilerplate": {
@@ -5277,6 +5282,7 @@
       "company_name": "Barclays PLC",
       "sector": "Financial",
       "overall_score": 3.17,
+      "source_url": "https://downloads.modern-slavery-statement-registry.service.gov.uk/pdf-published/EcdNC4fw/2023/Barclays-Statement-on-Modern-Slavery_February%202023.pdf",
       "boilerplate_flag": false,
       "flags": [],
       "boilerplate": {
@@ -5467,6 +5473,7 @@
       "company_name": "Hiscox",
       "sector": "Insurance",
       "overall_score": 2.33,
+      "source_url": "https://downloads.modern-slavery-statement-registry.service.gov.uk/pdf-published/C5kQQjTb/2022/Hiscox%20Modern%20slavery%20statement%20-%202022.pdf",
       "boilerplate_flag": false,
       "flags": [],
       "boilerplate": {
@@ -5607,6 +5614,7 @@
       "company_name": "Damen Shipyards Group",
       "sector": "Shipbuilding",
       "overall_score": 2.17,
+      "source_url": "https://downloads.modern-slavery-statement-registry.service.gov.uk/pdf-published/MzEPDzmh/2023/modern-slavery-statement.pdf",
       "boilerplate_flag": false,
       "flags": [],
       "boilerplate": {
@@ -5757,6 +5765,7 @@
       "company_name": "Dell Technologies",
       "sector": "Technology",
       "overall_score": 2.0,
+      "source_url": "https://downloads.modern-slavery-statement-registry.service.gov.uk/pdf-published/nDCDc8Ua/2023/dell-modern-slavery-statement%2029June2023.pdf",
       "boilerplate_flag": true,
       "flags": [
         "Substantially unchanged from prior year (70% of paragraphs identical to 2022)"
@@ -6418,6 +6427,7 @@
       "company_name": "Hiscox",
       "sector": "Insurance",
       "overall_score": 2.0,
+      "source_url": "https://downloads.modern-slavery-statement-registry.service.gov.uk/pdf-published/C5kQQjTb/2023/Modern%20Slavery%20Statement%202023-signed.pdf",
       "boilerplate_flag": true,
       "flags": [
         "Substantially unchanged from prior year (79% of paragraphs identical to 2022)"
@@ -6703,6 +6713,7 @@
       "company_name": "Siemens Gamesa Renewable Energy",
       "sector": "Renewable Energy",
       "overall_score": 1.5,
+      "source_url": "https://downloads.modern-slavery-statement-registry.service.gov.uk/pdf-published/CNsMZ5He/2023/038%20Modern%20Slavery%20Act%20Statement%202022.pdf",
       "boilerplate_flag": false,
       "flags": [],
       "boilerplate": {

@@ -5,343 +5,323 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Statement Auditor</title>
 <style>
-  /* ---- palette (validated reference instance) ---- */
   :root {
     --surface-1:#fcfcfb; --page:#f9f9f7;
     --ink:#0b0b0b; --ink-2:#52514e; --muted:#898781;
     --grid:#e1e0d9; --axis:#c3c2b7; --border:rgba(11,11,11,0.10);
-    --accent:#256abf;                 /* overall-score bars (magnitude) */
-    --track:#eceae4;                  /* bar track */
-    --critical:#d03b3b;               /* YoY "unchanged" (boilerplate) */
-    --critical-wash:rgba(208,59,59,0.10);
-    --dim-1:#2a78d6; --dim-2:#1baf7a; --dim-3:#eda100;
-    --dim-4:#008300; --dim-5:#4a3aa7; --dim-6:#e34948;
-    --dim-wash:0.16;                  /* highlight alpha */
+    --track:#eceae4; --accent:#256abf;
+    --critical:#d03b3b; --critical-wash:rgba(208,59,59,0.10);
+    /* dimension colours (detail bars + highlights) */
+    --dim-1:#2a78d6; --dim-2:#1baf7a; --dim-3:#eda100; --dim-4:#008300; --dim-5:#4a3aa7; --dim-6:#e34948;
+    /* company colours (overview chart) — 8 validated categorical slots */
+    --c1:#2a78d6; --c2:#1baf7a; --c3:#eda100; --c4:#008300; --c5:#4a3aa7; --c6:#e34948; --c7:#e87ba4; --c8:#eb6834;
+    --dim-wash:0.16;
   }
-  @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) {
-      --surface-1:#1a1a19; --page:#0d0d0d;
-      --ink:#fff; --ink-2:#c3c2b7; --muted:#898781;
-      --grid:#2c2c2a; --axis:#383835; --border:rgba(255,255,255,0.10);
-      --accent:#3987e5; --track:#2c2c2a;
-      --critical:#e66767; --critical-wash:rgba(230,103,103,0.16);
-      --dim-1:#3987e5; --dim-2:#199e70; --dim-3:#c98500;
-      --dim-4:#008300; --dim-5:#9085e9; --dim-6:#e66767;
-      --dim-wash:0.28;
-    }
-  }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+    --surface-1:#1a1a19; --page:#0d0d0d; --ink:#fff; --ink-2:#c3c2b7; --muted:#898781;
+    --grid:#2c2c2a; --axis:#383835; --border:rgba(255,255,255,0.10);
+    --track:#2c2c2a; --accent:#3987e5; --critical:#e66767; --critical-wash:rgba(230,103,103,0.16);
+    --dim-1:#3987e5; --dim-2:#199e70; --dim-3:#c98500; --dim-4:#008300; --dim-5:#9085e9; --dim-6:#e66767;
+    --c1:#3987e5; --c2:#199e70; --c3:#c98500; --c4:#008300; --c5:#9085e9; --c6:#e66767; --c7:#d55181; --c8:#d95926;
+    --dim-wash:0.28;
+  }}
   :root[data-theme="dark"] {
     --surface-1:#1a1a19; --page:#0d0d0d; --ink:#fff; --ink-2:#c3c2b7; --muted:#898781;
     --grid:#2c2c2a; --axis:#383835; --border:rgba(255,255,255,0.10);
-    --accent:#3987e5; --track:#2c2c2a; --critical:#e66767; --critical-wash:rgba(230,103,103,0.16);
+    --track:#2c2c2a; --accent:#3987e5; --critical:#e66767; --critical-wash:rgba(230,103,103,0.16);
     --dim-1:#3987e5; --dim-2:#199e70; --dim-3:#c98500; --dim-4:#008300; --dim-5:#9085e9; --dim-6:#e66767;
+    --c1:#3987e5; --c2:#199e70; --c3:#c98500; --c4:#008300; --c5:#9085e9; --c6:#e66767; --c7:#d55181; --c8:#d95926;
     --dim-wash:0.28;
   }
-
   * { box-sizing:border-box; }
   html,body { margin:0; }
-  body {
-    background:var(--page); color:var(--ink);
-    font:15px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif;
-    -webkit-font-smoothing:antialiased;
-  }
-  .wrap { max-width:1080px; margin:0 auto; padding:0 24px; }
-  a { color:inherit; }
-
-  /* masthead */
+  body { background:var(--page); color:var(--ink); font:15px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif; -webkit-font-smoothing:antialiased; }
+  .wrap { max-width:1000px; margin:0 auto; padding:0 24px; }
+  a { color:var(--accent); }
   header.mast { border-bottom:1px solid var(--border); background:var(--surface-1); }
-  .mast-top { display:flex; align-items:baseline; justify-content:space-between; gap:16px; padding-top:26px; }
+  .mast-top { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; padding:26px 0 20px; }
   h1 { font-family:Georgia,"Times New Roman",serif; font-weight:600; font-size:30px; letter-spacing:-0.01em; margin:0; }
-  .tagline { color:var(--ink-2); margin:6px 0 0; max-width:60ch; }
-  .mast-tools { display:flex; gap:10px; align-items:center; white-space:nowrap; }
-  select, button.btn {
-    font:inherit; color:var(--ink); background:var(--surface-1);
-    border:1px solid var(--axis); border-radius:7px; padding:6px 10px; cursor:pointer;
-  }
-  .disclaimer { color:var(--muted); font-size:12.5px; margin:14px 0 0; }
+  .tagline { color:var(--ink-2); margin:6px 0 0; max-width:66ch; }
+  button.btn { font:inherit; color:var(--ink); background:var(--surface-1); border:1px solid var(--axis); border-radius:7px; padding:6px 10px; cursor:pointer; }
+  .disclaimer { color:var(--muted); font-size:12.5px; margin:0 0 18px; }
+  main { padding:24px 0 8px; }
 
-  /* tabs */
-  nav.tabs { display:flex; gap:2px; margin-top:18px; }
-  nav.tabs button {
-    font:inherit; background:none; border:none; border-bottom:2px solid transparent;
-    color:var(--ink-2); padding:9px 14px; cursor:pointer; border-radius:0;
-  }
-  nav.tabs button[aria-selected="true"] { color:var(--ink); border-bottom-color:var(--accent); font-weight:600; }
+  h2.vt { font-family:Georgia,serif; font-weight:600; font-size:22px; margin:0 0 4px; }
+  .note { color:var(--ink-2); margin:0 0 18px; font-size:13.5px; }
 
-  main { padding:26px 0 8px; }
-  h2.view-title { font-family:Georgia,serif; font-weight:600; font-size:21px; margin:0 0 4px; }
-  .view-note { color:var(--ink-2); margin:0 0 18px; font-size:13.5px; }
+  /* overview chart */
+  .chartcard { background:var(--surface-1); border:1px solid var(--border); border-radius:12px; padding:18px 20px 10px; position:relative; }
+  svg text { fill:var(--muted); font-size:12px; }
+  .legend { display:flex; flex-wrap:wrap; gap:8px 16px; margin:14px 2px 2px; }
+  .legend button { display:inline-flex; align-items:center; gap:7px; background:none; border:none; color:var(--ink-2); font:inherit; font-size:13px; cursor:pointer; padding:2px 4px; border-radius:6px; }
+  .legend button:hover { color:var(--ink); background:var(--track); }
+  .legend i { width:11px; height:11px; border-radius:3px; }
+  #tip { position:fixed; pointer-events:none; background:var(--ink); color:var(--surface-1); font-size:12px; padding:6px 9px; border-radius:6px; opacity:0; transition:opacity .1s; z-index:9; white-space:nowrap; }
 
-  /* table */
-  table { width:100%; border-collapse:collapse; }
-  th,td { text-align:left; padding:11px 10px; border-bottom:1px solid var(--grid); vertical-align:middle; }
-  th { font-size:12px; letter-spacing:0.04em; text-transform:uppercase; color:var(--muted); cursor:pointer; user-select:none; font-weight:600; }
-  th.sorted::after { content:" "attr(data-arrow); color:var(--ink-2); }
-  tbody tr { cursor:pointer; }
-  tbody tr:hover { background:var(--track); }
-  td.num { font-variant-numeric:tabular-nums; }
-
-  /* bars */
-  .bar-cell { display:flex; align-items:center; gap:10px; min-width:190px; }
-  .track { flex:1; height:8px; background:var(--track); border-radius:4px; overflow:hidden; }
-  .fill { height:100%; border-radius:4px; }
-  .score-num { font-variant-numeric:tabular-nums; font-weight:600; min-width:34px; text-align:right; }
-
-  .chip { display:inline-flex; align-items:center; gap:5px; font-size:11.5px; font-weight:600;
-          padding:2px 8px; border-radius:999px; border:1px solid var(--border); white-space:nowrap; }
+  /* ranked index */
+  .ranked { margin-top:26px; }
+  .rrow { display:flex; align-items:center; gap:12px; padding:9px 8px; border-bottom:1px solid var(--grid); cursor:pointer; border-radius:6px; }
+  .rrow:hover { background:var(--track); }
+  .rrow .co { flex:1; min-width:0; }
+  .rrow .co b { font-weight:600; } .rrow .co .meta { color:var(--muted); font-size:12.5px; }
+  .rrow .rtrack { width:130px; height:8px; background:var(--track); border-radius:4px; overflow:hidden; }
+  .rrow .rfill { height:100%; background:var(--accent); border-radius:4px; }
+  .rrow .rnum { width:34px; text-align:right; font-variant-numeric:tabular-nums; font-weight:600; }
+  .chip { display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:600; padding:2px 8px; border-radius:999px; border:1px solid var(--border); white-space:nowrap; }
   .chip.flag { color:var(--critical); border-color:var(--critical); }
   .chip.fallback { color:var(--ink-2); }
+  .chip.up { color:var(--dim-4); } .chip.down { color:var(--critical); }
 
-  /* scorecard */
-  .sc-head { display:flex; flex-wrap:wrap; align-items:baseline; gap:14px; margin-bottom:6px; }
-  .sc-head .big { font-size:34px; font-weight:700; font-variant-numeric:tabular-nums; }
-  .sc-head .sub { color:var(--ink-2); }
-  .tiles { display:flex; gap:14px; flex-wrap:wrap; margin:16px 0 22px; }
+  /* detail */
+  .back { background:none; border:none; color:var(--accent); font:inherit; cursor:pointer; padding:0; margin:0 0 14px; }
+  .dhead { display:flex; flex-wrap:wrap; align-items:baseline; gap:14px; }
+  .dhead .big { font-size:38px; font-weight:700; font-variant-numeric:tabular-nums; }
+  .dhead .sub { color:var(--ink-2); }
+  .yrtoggle { margin-left:auto; display:flex; gap:2px; }
+  .yrtoggle button { font:inherit; font-size:13px; border:1px solid var(--axis); background:var(--surface-1); color:var(--ink-2); padding:4px 12px; cursor:pointer; }
+  .yrtoggle button:first-child { border-radius:7px 0 0 7px; } .yrtoggle button:last-child { border-radius:0 7px 7px 0; }
+  .yrtoggle button[aria-pressed="true"] { background:var(--accent); color:#fff; border-color:var(--accent); }
+  .callout { border:1px solid var(--border); border-left:3px solid var(--accent); background:var(--surface-1); border-radius:0 10px 10px 0; padding:12px 16px; margin:16px 0; }
+  .callout.warn { border-left-color:var(--critical); }
+  .callout .lead { font-weight:600; } .callout .body { color:var(--ink-2); font-size:14px; margin-top:3px; }
+  .tiles { display:flex; gap:14px; flex-wrap:wrap; margin:16px 0; }
   .tile { border:1px solid var(--border); border-radius:10px; padding:12px 16px; background:var(--surface-1); min-width:150px; }
   .tile .k { color:var(--muted); font-size:12px; text-transform:uppercase; letter-spacing:0.04em; }
   .tile .v { font-size:22px; font-weight:700; font-variant-numeric:tabular-nums; margin-top:3px; }
   .tile .v small { font-size:13px; font-weight:500; color:var(--ink-2); }
-
+  h3.sec { font-size:13px; text-transform:uppercase; letter-spacing:0.05em; color:var(--muted); margin:26px 0 8px; font-weight:600; }
   .dim { border-bottom:1px solid var(--grid); }
   .dim summary { display:flex; align-items:center; gap:12px; padding:12px 4px; cursor:pointer; list-style:none; }
   .dim summary::-webkit-details-marker { display:none; }
   .dim .swatch { width:10px; height:10px; border-radius:3px; flex:none; }
-  .dim .dname { flex:1; }
-  .dim .dname .s54 { color:var(--muted); font-size:12px; margin-left:6px; }
+  .dim .dname { flex:1; } .dim .dname .s54 { color:var(--muted); font-size:12px; margin-left:6px; }
   .dim .dtrack { width:120px; height:8px; background:var(--track); border-radius:4px; overflow:hidden; }
-  .dim .expand { padding:4px 4px 18px 34px; }
-  .dim .just { color:var(--ink-2); margin:0 0 12px; }
-  blockquote.ev { margin:0 0 8px; padding:8px 12px; border-left:3px solid var(--axis);
-                  background:var(--track); border-radius:0 6px 6px 0; font-size:13.5px; }
-
-  /* legend */
-  .legend { display:flex; flex-wrap:wrap; gap:14px; margin:0 0 16px; font-size:13px; }
-  .legend span { display:inline-flex; align-items:center; gap:6px; color:var(--ink-2); }
-  .legend i { width:11px; height:11px; border-radius:3px; display:inline-block; }
-
-  /* evidence view */
-  .doc { background:var(--surface-1); border:1px solid var(--border); border-radius:10px;
-         padding:22px 26px; white-space:pre-wrap; font-size:14px; line-height:1.7;
-         max-height:70vh; overflow:auto; }
+  .dim .dfill { display:block; height:100%; border-radius:4px; }
+  .dim .score-num { width:20px; text-align:right; font-variant-numeric:tabular-nums; font-weight:600; }
+  .dim .expand { padding:2px 4px 16px 34px; }
+  .dim .just { color:var(--ink-2); margin:0 0 10px; }
+  blockquote.ev { margin:0 0 8px; padding:8px 12px; border-left:3px solid var(--axis); background:var(--track); border-radius:0 6px 6px 0; font-size:13.5px; }
+  .gaps { display:flex; flex-wrap:wrap; gap:8px; }
+  .gaps .g { font-size:13px; padding:4px 10px; border-radius:8px; background:var(--critical-wash); color:var(--ink); border:1px solid var(--border); }
+  .legend2 { display:flex; flex-wrap:wrap; gap:14px; margin:0 0 12px; font-size:13px; }
+  .legend2 span { display:inline-flex; align-items:center; gap:6px; color:var(--ink-2); } .legend2 i { width:11px; height:11px; border-radius:3px; }
+  .doc { background:var(--surface-1); border:1px solid var(--border); border-radius:10px; padding:20px 24px; white-space:pre-wrap; font-size:13.5px; line-height:1.7; max-height:60vh; overflow:auto; }
   .doc mark { border-radius:3px; padding:0.5px 1px; color:inherit; }
-
-  /* yoy */
-  .yoy-controls { display:flex; align-items:center; gap:16px; margin-bottom:14px; flex-wrap:wrap; }
-  .yoy-sum { font-size:15px; }
-  .yoy-sum b { font-variant-numeric:tabular-nums; }
   .pair { display:grid; grid-template-columns:1fr 1fr; gap:14px; padding:12px 0; border-bottom:1px solid var(--grid); }
-  .pair .col { font-size:13px; }
   .pair .yr { color:var(--muted); font-size:11px; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:4px; }
   .pair .sim { grid-column:1/3; font-size:11.5px; color:var(--muted); font-variant-numeric:tabular-nums; }
-  .pair.unchanged { background:var(--critical-wash); border-radius:8px; padding:12px; }
-  .pair.unchanged .yr { color:var(--critical); }
-  .pager { display:flex; gap:10px; align-items:center; margin-top:16px; }
-
-  footer.foot { color:var(--muted); font-size:12px; border-top:1px solid var(--border);
-                margin-top:30px; padding:16px 0 40px; }
-  .empty { color:var(--ink-2); padding:30px 0; }
+  .pair.unchanged { background:var(--critical-wash); border-radius:8px; padding:12px; } .pair.unchanged .yr { color:var(--critical); }
+  .pager { display:flex; gap:10px; align-items:center; margin-top:14px; }
+  .srclink { display:inline-block; margin:20px 0 4px; font-size:14px; }
+  footer.foot { color:var(--muted); font-size:12px; border-top:1px solid var(--border); margin-top:30px; padding:16px 0 40px; }
 </style>
 </head>
 <body>
-<header class="mast">
-  <div class="wrap">
-    <div class="mast-top">
-      <div>
-        <h1>Statement Auditor</h1>
-        <p class="tagline">Disclosure-quality scoring of corporate modern slavery statements, against
-          the six content areas of UK Modern Slavery Act 2015 <a href="https://www.legislation.gov.uk/ukpga/2015/30/section/54">s.54(5)</a>.</p>
-      </div>
-      <div class="mast-tools">
-        <select id="company" aria-label="Select company"></select>
-        <button class="btn" id="theme" title="Toggle light/dark">◐</button>
-      </div>
+<header class="mast"><div class="wrap">
+  <div class="mast-top">
+    <div>
+      <h1>Statement Auditor</h1>
+      <p class="tagline">Disclosure-quality scoring of corporate modern slavery statements, against the six
+        content areas of UK Modern Slavery Act 2015 <a href="https://www.legislation.gov.uk/ukpga/2015/30/section/54">s.54(5)</a>.
+        Higher is more specific and substantiated — not a judgement of a company's labour practices.</p>
     </div>
-    <nav class="tabs" id="tabs">
-      <button data-view="leaderboard" aria-selected="true">Leaderboard</button>
-      <button data-view="scorecard" aria-selected="false">Scorecard</button>
-      <button data-view="evidence" aria-selected="false">Evidence</button>
-      <button data-view="yoy" aria-selected="false">Year&#8209;over&#8209;year</button>
-    </nav>
-    <p class="disclaimer">Automated analysis of public statements — a measure of disclosure specificity,
-      not a legal assessment, and not a claim about any company's labour practices.</p>
+    <button class="btn" id="theme" title="Toggle light/dark">◐</button>
   </div>
-</header>
+  <p class="disclaimer">Automated analysis of public statements, not a legal assessment.</p>
+</div></header>
 
 <main><div class="wrap" id="view"></div></main>
-
-<footer class="foot"><div class="wrap" id="foot">
-  Automated analysis of public statements, not a legal assessment.
-</div></footer>
+<div id="tip"></div>
+<footer class="foot"><div class="wrap">Automated analysis of public statements, not a legal assessment.</div></footer>
 
 <script>
-const DIM_COLORS = {1:'var(--dim-1)',2:'var(--dim-2)',3:'var(--dim-3)',4:'var(--dim-4)',5:'var(--dim-5)',6:'var(--dim-6)'};
-const state = { data:null, view:'leaderboard', company:null, sort:{key:'overall_score',dir:-1},
-                yoy:{unchangedOnly:false, page:0, per:25} };
-const $ = (s,r=document)=>r.querySelector(s);
-const esc = s => s.replace(/[&<>]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
-const key = s => `${s.slug}_${s.year}`;
-const fmt = n => (n==null? '—' : (Math.round(n*100)/100).toString());
+const DIMC = {1:'var(--dim-1)',2:'var(--dim-2)',3:'var(--dim-3)',4:'var(--dim-4)',5:'var(--dim-5)',6:'var(--dim-6)'};
+const CO_VARS = ['--c1','--c2','--c3','--c4','--c5','--c6','--c7','--c8'];
+const state = { data:null, view:'overview', slug:null, year:null, yoy:{unchangedOnly:false,page:0,per:20} };
+const $ = s => document.querySelector(s);
+const esc = s => (s||'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+const fmt = n => n==null?'—':(Math.round(n*100)/100).toString();
+let COLOR = {};  // company_name -> css var
 
-async function boot(){
-  state.data = await (await fetch('data.json')).json();
-  const sel = $('#company');
-  state.data.statements.forEach(s=>{
-    const o=document.createElement('option'); o.value=key(s);
-    o.textContent=`${s.company_name} (${s.year})`; sel.appendChild(o);
+function boot(){
+  fetch('data.json').then(r=>r.json()).then(d=>{
+    state.data=d;
+    const names=[...new Set(d.statements.map(s=>s.company_name))].sort();
+    names.forEach((n,i)=>COLOR[n]=`var(${CO_VARS[i%CO_VARS.length]})`);
+    $('#theme').onclick=()=>{const c=document.documentElement.getAttribute('data-theme');
+      document.documentElement.setAttribute('data-theme', c==='dark'?'light':c==='light'?'dark':(matchMedia('(prefers-color-scheme: dark)').matches?'light':'dark'));
+      render();};
+    render();
   });
-  state.company = key(state.data.statements[0]);
-  sel.value = state.company;
-  sel.onchange = e=>{ state.company=e.target.value; state.yoy.page=0; render(); };
-  $('#tabs').addEventListener('click', e=>{
-    const b=e.target.closest('button[data-view]'); if(!b) return;
-    setView(b.dataset.view);
-  });
-  $('#theme').onclick = ()=>{
-    const cur = document.documentElement.getAttribute('data-theme');
-    const next = cur==='dark' ? 'light' : cur==='light' ? 'dark'
-                 : (matchMedia('(prefers-color-scheme: dark)').matches ? 'light':'dark');
-    document.documentElement.setAttribute('data-theme', next);
-  };
-  render();
 }
-function setView(v){ state.view=v; [...$('#tabs').children].forEach(b=>b.setAttribute('aria-selected', b.dataset.view===v)); render(); }
-function stmt(){ return state.data.statements.find(s=>key(s)===state.company); }
-function render(){ ({leaderboard:leaderboard, scorecard:scorecard, evidence:evidence, yoy:yoy})[state.view](); }
+function render(){ state.view==='overview'?overview():detail(); }
+function stmt(slug,year){ return state.data.statements.find(s=>s.slug===slug&&s.year===year); }
+function yearsOf(slug){ return state.data.statements.filter(s=>s.slug===slug).map(s=>s.year).sort(); }
+function open_(slug,year){ state.slug=slug; state.year=year; state.view='detail'; state.yoy={unchangedOnly:false,page:0,per:20}; render(); scrollTo(0,0); }
 
-/* ---------- Leaderboard ---------- */
-function leaderboard(){
-  const cols = [
-    {k:'company_name',label:'Company',num:false},
-    {k:'sector',label:'Sector',num:false},
-    {k:'year',label:'Year',num:true},
-    {k:'overall_score',label:'Overall',num:true},
-    {k:'hedge',label:'Hedge /1k',num:true},
-    {k:'flag',label:'Flags',num:false},
-  ];
-  const rows = [...state.data.statements];
-  const {key:sk,dir}=state.sort;
-  const val = s => sk==='hedge'? s.boilerplate.hedge_density : sk==='flag'? (s.boilerplate_flag?1:0) : s[sk];
-  rows.sort((a,b)=>{
-    let d = (val(a)>val(b)?1:val(a)<val(b)?-1:0)*dir;
-    if(d===0) d = a.boilerplate.hedge_density - b.boilerplate.hedge_density; // deterministic tie-break
-    return d;
-  });
-  const th = cols.map(c=>`<th data-k="${c.k}" class="${sk===c.k?'sorted':''}" data-arrow="${dir<0?'▼':'▲'}">${c.label}</th>`).join('');
-  const body = rows.map(s=>`
-    <tr data-co="${key(s)}">
-      <td>${esc(s.company_name)}</td>
-      <td>${esc(s.sector)}</td>
-      <td class="num">${s.year}</td>
-      <td><div class="bar-cell"><div class="track"><div class="fill" style="width:${s.overall_score/4*100}%;background:var(--accent)"></div></div><span class="score-num">${fmt(s.overall_score)}</span></div></td>
-      <td class="num">${fmt(s.boilerplate.hedge_density)}</td>
-      <td>${s.boilerplate_flag?`<span class="chip flag">⚑ ${Math.round(s.boilerplate.share*100)}% unchanged</span>`:''}</td>
-    </tr>`).join('');
+/* ---------------- Overview ---------------- */
+function overview(){
+  const S=state.data.statements;
   $('#view').innerHTML = `
-    <h2 class="view-title">Leaderboard</h2>
-    <p class="view-note">All statements ranked by overall disclosure-quality score (mean of six dimensions, boilerplate-capped). Click a column to sort, a row to open its scorecard.</p>
-    <table><thead><tr>${th}</tr></thead><tbody>${body}</tbody></table>`;
-  $('#view').querySelectorAll('th').forEach(h=>h.onclick=()=>{
-    const k=h.dataset.k; state.sort = {key:k, dir: state.sort.key===k? -state.sort.dir : -1}; leaderboard();
+    <h2 class="vt">Disclosure quality by year</h2>
+    <p class="note">Each line is a company; each point a statement. A downward step means a weaker statement than the year before —
+      often because most of it was copied over (flagged ⚑). Click any point or company to see why.</p>
+    <div class="chartcard">${chartSVG(S)}<div class="legend" id="legend"></div></div>
+    <div class="ranked" id="ranked"></div>`;
+  // legend
+  const names=[...new Set(S.map(s=>s.company_name))].sort();
+  $('#legend').innerHTML = names.map(n=>`<button data-co="${esc(n)}"><i style="background:${COLOR[n]}"></i>${esc(n)}</button>`).join('');
+  $('#legend').querySelectorAll('button').forEach(b=>b.onclick=()=>{
+    const s=S.filter(x=>x.company_name===b.dataset.co).sort((a,c)=>c.year-a.year)[0]; open_(s.slug,s.year);
   });
-  $('#view').querySelectorAll('tr[data-co]').forEach(r=>r.onclick=()=>{ state.company=r.dataset.co; $('#company').value=state.company; setView('scorecard'); });
+  // ranked list
+  const rows=[...S].sort((a,b)=>b.overall_score-a.overall_score||a.boilerplate.hedge_density-b.boilerplate.hedge_density);
+  $('#ranked').innerHTML = `<h3 class="sec">All statements</h3>` + rows.map(s=>`
+    <div class="rrow" data-slug="${s.slug}" data-year="${s.year}">
+      <span class="co"><b>${esc(s.company_name)}</b> <span class="meta">· ${esc(s.sector)} · ${s.year}</span></span>
+      ${s.boilerplate_flag?`<span class="chip flag">⚑ ${Math.round(s.boilerplate.share*100)}% unchanged</span>`:''}
+      <span class="rtrack"><span class="rfill" style="width:${s.overall_score/4*100}%"></span></span>
+      <span class="rnum">${fmt(s.overall_score)}</span>
+    </div>`).join('');
+  $('#ranked').querySelectorAll('.rrow').forEach(r=>r.onclick=()=>open_(r.dataset.slug, +r.dataset.year));
+  wirePoints();
 }
 
-/* ---------- Scorecard ---------- */
-function scorecard(){
-  const s = stmt();
-  const bp = s.boilerplate;
-  const tiles = `
+function chartSVG(S){
+  const W=940,H=380,m={t:16,r:24,b:34,l:34}, pw=W-m.l-m.r, ph=H-m.t-m.b;
+  const years=[2022,2023,2024,2025];
+  const x=y=>m.l+(y-2022)/(2025-2022)*pw, yy=v=>m.t+(1-v/4)*ph;
+  let g='';
+  for(let v=0;v<=4;v++){ g+=`<line x1="${m.l}" y1="${yy(v)}" x2="${m.l+pw}" y2="${yy(v)}" stroke="var(--grid)"/>
+    <text x="${m.l-8}" y="${yy(v)+4}" text-anchor="end">${v}</text>`; }
+  years.forEach(yr=>{ g+=`<text x="${x(yr)}" y="${H-12}" text-anchor="middle">${yr}</text>`; });
+  const byco={}; S.forEach(s=>(byco[s.company_name]=byco[s.company_name]||[]).push(s));
+  let paths='';
+  for(const [name,arr] of Object.entries(byco)){
+    const pts=arr.slice().sort((a,b)=>a.year-b.year), col=COLOR[name];
+    if(pts.length>1){ paths+=`<polyline fill="none" stroke="${col}" stroke-width="2" points="${pts.map(p=>`${x(p.year)},${yy(p.overall_score)}`).join(' ')}"/>`; }
+    pts.forEach(p=>{
+      paths+=`<circle class="pt" data-slug="${p.slug}" data-year="${p.year}" data-name="${esc(name)}" data-score="${p.overall_score}" data-flag="${p.boilerplate_flag?1:0}"
+        cx="${x(p.year)}" cy="${yy(p.overall_score)}" r="5.5" fill="${col}" stroke="var(--surface-1)" stroke-width="2" style="cursor:pointer"/>`;
+      if(p.boilerplate_flag) paths+=`<circle cx="${x(p.year)}" cy="${yy(p.overall_score)}" r="9" fill="none" stroke="var(--critical)" stroke-width="1.5"/>`;
+    });
+  }
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Overall score by year, one line per company">${g}${paths}</svg>`;
+}
+function wirePoints(){
+  const tip=$('#tip');
+  $('#view').querySelectorAll('circle.pt').forEach(c=>{
+    c.onmouseenter=e=>{ const d=c.dataset;
+      tip.innerHTML=`<b>${d.name}</b> ${d.year} — ${d.score}${d.flag==='1'?' ⚑ boilerplate-capped':''}`;
+      tip.style.opacity=1; };
+    c.onmousemove=e=>{ tip.style.left=(e.clientX+12)+'px'; tip.style.top=(e.clientY+12)+'px'; };
+    c.onmouseleave=()=>tip.style.opacity=0;
+    c.onclick=()=>{ tip.style.opacity=0; open_(c.dataset.slug, +c.dataset.year); };
+  });
+}
+
+/* ---------------- Detail ---------------- */
+function detail(){
+  const s=stmt(state.slug,state.year), bp=s.boilerplate;
+  const years=yearsOf(s.slug);
+  const prior=state.data.statements.find(x=>x.slug===s.slug && x.year===s.year-1);
+  // trajectory / why-the-drop callout
+  let callout='';
+  if(prior){
+    const delta=+(s.overall_score-prior.overall_score).toFixed(2);
+    const dir=delta<0?'down':delta>0?'up':'';
+    const arrow=delta<0?'▼':delta>0?'▲':'→';
+    let body=`Overall moved from <b>${fmt(prior.overall_score)}</b> (${prior.year}) to <b>${fmt(s.overall_score)}</b> (${s.year}).`;
+    if(s.boilerplate_flag) body+=` This statement was <b>capped at 2.0</b> because <b>${Math.round(bp.share*100)}%</b> of it
+      (${bp.n_unchanged} of ${bp.n_paragraphs} paragraphs) is substantially identical to ${bp.prior_year} — see year-over-year below.`;
+    callout=`<div class="callout ${s.boilerplate_flag?'warn':''}"><div class="lead">Year-over-year
+      <span class="chip ${dir}">${arrow} ${delta>0?'+':''}${delta}</span></div><div class="body">${body}</div></div>`;
+  }
+  // gaps
+  const weak=s.dimensions.filter(d=>d.score<=1).sort((a,b)=>a.score-b.score);
+  const gaps = weak.length
+    ? `<div class="gaps">${weak.map(d=>`<span class="g">${esc(d.name)} — ${d.score}${d.fallback?' (only a passing mention)':''}</span>`).join('')}</div>`
+    : `<p class="note" style="margin:0">No dimension scored below 2 — the weakest is ${esc([...s.dimensions].sort((a,b)=>a.score-b.score)[0].name)}.</p>`;
+  // dimension bars
+  const dims=s.dimensions.map(d=>{
+    const c=DIMC[d.dimension];
+    const ev=d.evidence.length?d.evidence.map(e=>`<blockquote class="ev" style="border-left-color:${c}">${esc(e.quote)}</blockquote>`).join('')
+                            :`<p class="just">No verifiable evidence found — scored 0.</p>`;
+    return `<details class="dim"><summary>
+        <span class="swatch" style="background:${c}"></span>
+        <span class="dname">${esc(d.name)}<span class="s54">s.${d.s54}</span>${d.fallback?' <span class="chip fallback" title="No dimension-specific claims were extracted; re-scored from the full statement, capped at 2.">fallback</span>':''}</span>
+        <span class="dtrack"><span class="dfill" style="width:${d.score/4*100}%;background:${c}"></span></span>
+        <span class="score-num">${d.score}</span></summary>
+      <div class="expand"><p class="just">${esc(d.justification)}</p>${ev}</div></details>`;
+  }).join('');
+  // yoy
+  const yoy = bp.share==null ? '' : yoyBlock(s);
+  // full text (collapsed)
+  const legend2=s.dimensions.map(d=>`<span><i style="background:${DIMC[d.dimension]}"></i>${esc(d.name)}</span>`).join('');
+  const full=`<details><summary class="srclink" style="cursor:pointer">Show full statement text with evidence highlighted</summary>
+      <div class="legend2" style="margin-top:12px">${legend2}</div><div class="doc">${highlight(s)}</div></details>`;
+
+  const yrtoggle = years.length>1 ? `<div class="yrtoggle">${years.map(y=>`<button data-y="${y}" aria-pressed="${y===s.year}">${y}</button>`).join('')}</div>` : '';
+
+  $('#view').innerHTML = `
+    <button class="back" id="back">← All companies</button>
+    <div class="dhead"><span class="big">${fmt(s.overall_score)}</span>
+      <span class="sub">${esc(s.company_name)} · ${esc(s.sector)} · ${s.year}</span>${yrtoggle}</div>
+    ${callout}
     <div class="tiles">
       <div class="tile"><div class="k">Overall</div><div class="v">${fmt(s.overall_score)}<small> / 4</small></div></div>
       <div class="tile"><div class="k">Boilerplate vs prior yr</div><div class="v">${bp.share==null?'—':Math.round(bp.share*100)+'%'}${bp.share!=null?`<small> (${bp.n_unchanged}/${bp.n_paragraphs})</small>`:''}</div></div>
       <div class="tile"><div class="k">Hedge density</div><div class="v">${fmt(bp.hedge_density)}<small> /1k words</small></div></div>
-    </div>`;
-  const dims = s.dimensions.map(d=>{
-    const c = DIM_COLORS[d.dimension];
-    const ev = d.evidence.length
-      ? d.evidence.map(e=>`<blockquote class="ev" style="border-left-color:${c}">${esc(e.quote)}</blockquote>`).join('')
-      : `<p class="just">No evidence found — scored 0.</p>`;
-    return `<details class="dim">
-      <summary>
-        <span class="swatch" style="background:${c}"></span>
-        <span class="dname">${esc(d.name)}<span class="s54">s.${d.s54}</span>${d.fallback?' <span class="chip fallback" title="No dimension-specific claims were extracted; re-scored from the full statement text, capped at 2.">fallback</span>':''}</span>
-        <span class="dtrack"><span class="fill" style="width:${d.score/4*100}%;background:${c};display:block;height:100%"></span></span>
-        <span class="score-num">${d.score}</span>
-      </summary>
-      <div class="expand"><p class="just">${esc(d.justification)}</p>${ev}</div>
-    </details>`;
-  }).join('');
-  $('#view').innerHTML = `
-    <div class="sc-head"><span class="big">${fmt(s.overall_score)}</span>
-      <span class="sub">${esc(s.company_name)} · ${esc(s.sector)} · ${s.year}</span>
-      ${s.boilerplate_flag?`<span class="chip flag">⚑ substantially unchanged from ${bp.prior_year}</span>`:''}</div>
-    <p class="view-note">Each dimension scored 0–4 against the s.54(5) rubric. Expand a dimension for its justification and verbatim, source-verified evidence. “fallback” marks a dimension re-scored from full text (capped at 2) because no dimension-specific claims were extracted.</p>
-    ${tiles}
-    <div>${dims}</div>`;
-}
-
-/* ---------- Evidence ---------- */
-function evidence(){
-  const s = stmt();
-  const ranges=[];
-  s.dimensions.forEach(d=>d.evidence.forEach(e=>{ if(e.start>=0) ranges.push({start:e.start,end:e.end,dim:d.dimension,name:d.name,score:d.score}); }));
-  ranges.sort((a,b)=>a.start-b.start || b.end-a.end);
-  // greedy non-overlapping highlight
-  let html='', cur=0, lastEnd=0;
-  const t=s.text;
-  for(const r of ranges){
-    if(r.start<lastEnd) continue;            // drop overlap
-    html += esc(t.slice(cur, r.start));
-    const c = DIM_COLORS[r.dim];
-    html += `<mark data-dim="${r.dim}" title="${esc(r.name)} — score ${r.score}" style="background:color-mix(in srgb, ${c} calc(var(--dim-wash)*100%), transparent); box-shadow:inset 2px 0 0 ${c}">`+esc(t.slice(r.start,r.end))+`</mark>`;
-    cur=r.end; lastEnd=r.end;
-  }
-  html += esc(t.slice(cur));
-  const legend = s.dimensions.map(d=>`<span><i style="background:${DIM_COLORS[d.dimension]}"></i>${esc(d.name)} (${d.score})</span>`).join('');
-  $('#view').innerHTML = `
-    <h2 class="view-title">Evidence — ${esc(s.company_name)} ${s.year}</h2>
-    <p class="view-note">The full extracted statement with source-verified evidence highlighted by dimension. Highlights are positioned by stored character offsets — the exact text the score cites.</p>
-    <div class="legend">${legend}</div>
-    <div class="doc">${html}</div>`;
-}
-
-/* ---------- Year-over-year ---------- */
-function yoy(){
-  const s = stmt();
-  const pairs = s.paragraph_pairs;
-  if(!pairs.length){
-    $('#view').innerHTML = `<h2 class="view-title">Year-over-year</h2>
-      <p class="empty">No prior-year statement on file for ${esc(s.company_name)}. The diff needs two consecutive years (only Tesco has a pair in this set).</p>`;
-    return;
-  }
-  const unchanged = pairs.filter(p=>p.unchanged).length;
-  const shown = state.yoy.unchangedOnly ? pairs.filter(p=>p.unchanged) : pairs;
-  const per=state.yoy.per, pages=Math.max(1,Math.ceil(shown.length/per));
-  state.yoy.page=Math.min(state.yoy.page, pages-1);
-  const page = shown.slice(state.yoy.page*per, state.yoy.page*per+per);
-  const rows = page.map(p=>`
-    <div class="pair ${p.unchanged?'unchanged':''}">
-      <div class="col"><div class="yr">${s.year}</div>${esc(p.cur_text)}</div>
-      <div class="col"><div class="yr">${s.boilerplate.prior_year}</div>${esc(p.prior_text)}</div>
-      <div class="sim">cosine ${p.similarity.toFixed(3)}${p.unchanged?' · carried over':''}</div>
-    </div>`).join('');
-  $('#view').innerHTML = `
-    <h2 class="view-title">Year-over-year — ${esc(s.company_name)}</h2>
-    <p class="yoy-sum"><b>${Math.round(unchanged/pairs.length*100)}%</b> of this statement is substantially identical to ${s.boilerplate.prior_year} — <b>${unchanged}</b> of <b>${pairs.length}</b> paragraphs carried over (cosine ≥ ${state.data.boilerplate_similarity_threshold}).</p>
-    <div class="yoy-controls">
-      <label><input type="checkbox" id="uo" ${state.yoy.unchangedOnly?'checked':''}> Show carried-over paragraphs only</label>
     </div>
-    <div>${rows}</div>
-    <div class="pager">
-      <button class="btn" id="prev" ${state.yoy.page<=0?'disabled':''}>← Prev</button>
-      <span>Page ${state.yoy.page+1} / ${pages} · ${shown.length} paragraphs</span>
-      <button class="btn" id="next" ${state.yoy.page>=pages-1?'disabled':''}>Next →</button>
-    </div>`;
-  $('#uo').onchange=e=>{ state.yoy.unchangedOnly=e.target.checked; state.yoy.page=0; yoy(); };
-  $('#prev').onclick=()=>{ state.yoy.page--; yoy(); };
-  $('#next').onclick=()=>{ state.yoy.page++; yoy(); };
+    <h3 class="sec">Thinnest disclosure</h3>${gaps}
+    <h3 class="sec">Six dimensions · s.54(5)</h3><div>${dims}</div>
+    ${yoy}
+    <h3 class="sec">Source</h3>${full}
+    ${s.source_url?`<div><a class="srclink" href="${esc(s.source_url)}" target="_blank" rel="noopener">View the original statement (PDF) ↗</a></div>`:''}`;
+  $('#back').onclick=()=>{ state.view='overview'; render(); scrollTo(0,0); };
+  $('#view').querySelectorAll('.yrtoggle button').forEach(b=>b.onclick=()=>open_(s.slug,+b.dataset.y));
+  wireYoY(s);
 }
 
+function highlight(s){
+  const R=[]; s.dimensions.forEach(d=>d.evidence.forEach(e=>{ if(e.start>=0) R.push({...e,dim:d.dimension,name:d.name}); }));
+  R.sort((a,b)=>a.start-b.start||b.end-a.end);
+  let h='',cur=0,last=0,t=s.text;
+  for(const r of R){ if(r.start<last) continue; h+=esc(t.slice(cur,r.start));
+    const c=DIMC[r.dim];
+    h+=`<mark title="${esc(r.name)}" style="background:color-mix(in srgb, ${c} calc(var(--dim-wash)*100%), transparent); box-shadow:inset 2px 0 0 ${c}">${esc(t.slice(r.start,r.end))}</mark>`;
+    cur=r.end; last=r.end; }
+  return h+esc(t.slice(cur));
+}
+
+function yoyBlock(s){
+  const pairs=s.paragraph_pairs, unchanged=pairs.filter(p=>p.unchanged).length;
+  return `<h3 class="sec">Year-over-year vs ${s.boilerplate.prior_year}</h3>
+    <p style="margin:0 0 10px"><b>${Math.round(unchanged/pairs.length*100)}%</b> substantially identical to ${s.boilerplate.prior_year} —
+      <b>${unchanged}</b> of <b>${pairs.length}</b> paragraphs carried over (cosine ≥ ${state.data.boilerplate_similarity_threshold}).</p>
+    <label style="font-size:13px"><input type="checkbox" id="uo" ${state.yoy.unchangedOnly?'checked':''}> Show carried-over only</label>
+    <div id="pairs"></div><div class="pager" id="pager"></div>`;
+}
+function wireYoY(s){
+  if(s.boilerplate.share==null) return;
+  const uo=$('#uo'); if(!uo) return;
+  const draw=()=>{
+    const pairs=s.paragraph_pairs, shown=state.yoy.unchangedOnly?pairs.filter(p=>p.unchanged):pairs;
+    const per=state.yoy.per, pages=Math.max(1,Math.ceil(shown.length/per));
+    state.yoy.page=Math.min(state.yoy.page,pages-1);
+    const pg=shown.slice(state.yoy.page*per,state.yoy.page*per+per);
+    $('#pairs').innerHTML=pg.map(p=>`<div class="pair ${p.unchanged?'unchanged':''}">
+      <div><div class="yr">${s.year}</div>${esc(p.cur_text)}</div>
+      <div><div class="yr">${s.boilerplate.prior_year}</div>${esc(p.prior_text)}</div>
+      <div class="sim">cosine ${p.similarity.toFixed(3)}${p.unchanged?' · carried over':''}</div></div>`).join('');
+    $('#pager').innerHTML=`<button class="btn" id="pv" ${state.yoy.page<=0?'disabled':''}>← Prev</button>
+      <span>Page ${state.yoy.page+1}/${pages} · ${shown.length} paragraphs</span>
+      <button class="btn" id="nx" ${state.yoy.page>=pages-1?'disabled':''}>Next →</button>`;
+    $('#pv').onclick=()=>{state.yoy.page--;draw();}; $('#nx').onclick=()=>{state.yoy.page++;draw();};
+  };
+  uo.onchange=e=>{state.yoy.unchangedOnly=e.target.checked;state.yoy.page=0;draw();};
+  draw();
+}
 boot();
 </script>
 </body>
