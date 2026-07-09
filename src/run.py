@@ -53,7 +53,10 @@ def main() -> None:
     g.add_argument("--company", metavar="SLUG", help="Process a single company by slug.")
     ap.add_argument("--force", action="store_true",
                     help="Re-fetch, re-extract, and re-score, bypassing all caches.")
+    ap.add_argument("--scorer", choices=("combined", "legacy"), default=None,
+                    help="Scoring architecture (default: llm.combined_scoring in config.yaml).")
     args = ap.parse_args()
+    combined = None if args.scorer is None else (args.scorer == "combined")
 
     cfg = load_config()
     cfg.ensure_dirs()
@@ -79,7 +82,7 @@ def main() -> None:
             print(f"  {row.company_slug}_{row.year}: no extracted text — skipped", flush=True)
             continue
         print(f"  [{i}/{len(subset)}] {row.company_slug}_{row.year}: scoring…", flush=True)
-        dim_scores = score_for_row(cfg, row, use_cache=not args.force) or []
+        dim_scores = score_for_row(cfg, row, use_cache=not args.force, combined=combined) or []
         boilerplate, pairs = analyze_yoy(cfg, row, all_rows)
         statement = build_statement_score(cfg, row, dim_scores, boilerplate)
         store.save_statement(conn, statement, pairs)

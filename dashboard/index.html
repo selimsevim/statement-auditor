@@ -40,7 +40,7 @@
   a { color:var(--accent); }
   header.mast { border-bottom:1px solid var(--border); background:var(--surface-1); }
   .mast-top { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; padding:26px 0 20px; }
-  h1 { font-family:Georgia,"Times New Roman",serif; font-weight:600; font-size:30px; letter-spacing:-0.01em; margin:0; }
+  h1 { font-family:Georgia,"Times New Roman",serif; font-weight:600; font-size:30px; letter-spacing:0; margin:0; }
   .tagline { color:var(--ink-2); margin:6px 0 0; max-width:66ch; }
   button.btn { font:inherit; color:var(--ink); background:var(--surface-1); border:1px solid var(--axis); border-radius:7px; padding:6px 10px; cursor:pointer; }
   .disclaimer { color:var(--muted); font-size:12.5px; margin:0 0 18px; }
@@ -50,7 +50,7 @@
   .note { color:var(--ink-2); margin:0 0 18px; font-size:13.5px; }
 
   /* overview chart */
-  .chartcard { background:var(--surface-1); border:1px solid var(--border); border-radius:12px; padding:18px 20px 10px; position:relative; }
+  .chartcard { background:var(--surface-1); border:1px solid var(--border); border-radius:8px; padding:18px 20px 10px; position:relative; }
   svg text { fill:var(--muted); font-size:12px; }
   .legend { display:flex; flex-wrap:wrap; gap:8px 16px; margin:14px 2px 2px; }
   .legend button { display:inline-flex; align-items:center; gap:7px; background:none; border:none; color:var(--ink-2); font:inherit; font-size:13px; cursor:pointer; padding:2px 4px; border-radius:6px; }
@@ -81,11 +81,11 @@
   .yrtoggle button { font:inherit; font-size:13px; border:1px solid var(--axis); background:var(--surface-1); color:var(--ink-2); padding:4px 12px; cursor:pointer; }
   .yrtoggle button:first-child { border-radius:7px 0 0 7px; } .yrtoggle button:last-child { border-radius:0 7px 7px 0; }
   .yrtoggle button[aria-pressed="true"] { background:var(--accent); color:#fff; border-color:var(--accent); }
-  .callout { border:1px solid var(--border); border-left:3px solid var(--accent); background:var(--surface-1); border-radius:0 10px 10px 0; padding:12px 16px; margin:16px 0; }
+  .callout { border:1px solid var(--border); border-left:3px solid var(--accent); background:var(--surface-1); border-radius:0 8px 8px 0; padding:12px 16px; margin:16px 0; }
   .callout.warn { border-left-color:var(--critical); }
   .callout .lead { font-weight:600; } .callout .body { color:var(--ink-2); font-size:14px; margin-top:3px; }
   .tiles { display:flex; gap:14px; flex-wrap:wrap; margin:16px 0; }
-  .tile { border:1px solid var(--border); border-radius:10px; padding:12px 16px; background:var(--surface-1); min-width:150px; }
+  .tile { border:1px solid var(--border); border-radius:8px; padding:12px 16px; background:var(--surface-1); min-width:150px; }
   .tile .k { color:var(--muted); font-size:12px; text-transform:uppercase; letter-spacing:0.04em; }
   .tile .v { font-size:22px; font-weight:700; font-variant-numeric:tabular-nums; margin-top:3px; }
   .tile .v small { font-size:13px; font-weight:500; color:var(--ink-2); }
@@ -105,7 +105,7 @@
   .gaps .g { font-size:13px; padding:4px 10px; border-radius:8px; background:var(--critical-wash); color:var(--ink); border:1px solid var(--border); }
   .legend2 { display:flex; flex-wrap:wrap; gap:14px; margin:0 0 12px; font-size:13px; }
   .legend2 span { display:inline-flex; align-items:center; gap:6px; color:var(--ink-2); } .legend2 i { width:11px; height:11px; border-radius:3px; }
-  .doc { background:var(--surface-1); border:1px solid var(--border); border-radius:10px; padding:20px 24px; white-space:pre-wrap; font-size:13.5px; line-height:1.7; max-height:60vh; overflow:auto; }
+  .doc { background:var(--surface-1); border:1px solid var(--border); border-radius:8px; padding:20px 24px; white-space:pre-wrap; font-size:13.5px; line-height:1.7; max-height:60vh; overflow:auto; }
   .doc mark { border-radius:3px; padding:0.5px 1px; color:inherit; }
   .pair { display:grid; grid-template-columns:1fr 1fr; gap:14px; padding:12px 0; border-bottom:1px solid var(--grid); }
   .pair .yr { color:var(--muted); font-size:11px; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:4px; }
@@ -139,7 +139,7 @@ const DIMC = {1:'var(--dim-1)',2:'var(--dim-2)',3:'var(--dim-3)',4:'var(--dim-4)
 const CO_VARS = ['--c1','--c2','--c3','--c4','--c5','--c6','--c7','--c8'];
 const state = { data:null, view:'overview', slug:null, year:null, yoy:{unchangedOnly:false,page:0,per:20} };
 const $ = s => document.querySelector(s);
-const esc = s => (s||'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+const esc = s => (s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fmt = n => n==null?'—':(Math.round(n*100)/100).toString();
 let COLOR = {};  // company_name -> css var
 
@@ -296,9 +296,11 @@ function highlight(s){
 
 function yoyBlock(s){
   const pairs=s.paragraph_pairs, unchanged=pairs.filter(p=>p.unchanged).length;
+  const method=s.boilerplate.similarity_method||'embedding';
+  const threshold=s.boilerplate.similarity_threshold||state.data.boilerplate_similarity_threshold;
   return `<h3 class="sec">Year-over-year vs ${s.boilerplate.prior_year}</h3>
     <p style="margin:0 0 10px"><b>${Math.round(unchanged/pairs.length*100)}%</b> substantially identical to ${s.boilerplate.prior_year} —
-      <b>${unchanged}</b> of <b>${pairs.length}</b> paragraphs carried over (cosine ≥ ${state.data.boilerplate_similarity_threshold}).</p>
+      <b>${unchanged}</b> of <b>${pairs.length}</b> paragraphs carried over (${method} similarity ≥ ${threshold}).</p>
     <label style="font-size:13px"><input type="checkbox" id="uo" ${state.yoy.unchangedOnly?'checked':''}> Show carried-over only</label>
     <div id="pairs"></div><div class="pager" id="pager"></div>`;
 }

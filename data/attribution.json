@@ -1,0 +1,180 @@
+{
+  "changed_under_disabled": 13,
+  "buckets": {
+    "artifact": {
+      "count": 3,
+      "down": 1,
+      "up": 2,
+      "rows": [
+        {
+          "statement": "tesco_2025",
+          "dimension": 1,
+          "name": "Structure and supply chains",
+          "snapshot": 2,
+          "disabled": 3,
+          "adaptive": 2,
+          "direction": "up"
+        },
+        {
+          "statement": "siemens-gamesa_2022",
+          "dimension": 2,
+          "name": "Policies",
+          "snapshot": 3,
+          "disabled": 2,
+          "adaptive": 3,
+          "direction": "down"
+        },
+        {
+          "statement": "dell_2023",
+          "dimension": 4,
+          "name": "Risk assessment",
+          "snapshot": 3,
+          "disabled": 4,
+          "adaptive": 3,
+          "direction": "up"
+        }
+      ]
+    },
+    "structural": {
+      "count": 10,
+      "down": 8,
+      "up": 2,
+      "rows": [
+        {
+          "statement": "tesco_2024",
+          "dimension": 2,
+          "name": "Policies",
+          "snapshot": 3,
+          "disabled": 2,
+          "adaptive": 2,
+          "direction": "down"
+        },
+        {
+          "statement": "tesco_2025",
+          "dimension": 4,
+          "name": "Risk assessment",
+          "snapshot": 4,
+          "disabled": 3,
+          "adaptive": 3,
+          "direction": "down"
+        },
+        {
+          "statement": "barclays_2023",
+          "dimension": 1,
+          "name": "Structure and supply chains",
+          "snapshot": 3,
+          "disabled": 2,
+          "adaptive": 2,
+          "direction": "down"
+        },
+        {
+          "statement": "barclays_2024",
+          "dimension": 6,
+          "name": "Training",
+          "snapshot": 3,
+          "disabled": 4,
+          "adaptive": 4,
+          "direction": "up"
+        },
+        {
+          "statement": "damen_2022",
+          "dimension": 4,
+          "name": "Risk assessment",
+          "snapshot": 2,
+          "disabled": 1,
+          "adaptive": 1,
+          "direction": "down"
+        },
+        {
+          "statement": "damen_2022",
+          "dimension": 5,
+          "name": "Effectiveness and KPIs",
+          "snapshot": 2,
+          "disabled": 1,
+          "adaptive": 1,
+          "direction": "down"
+        },
+        {
+          "statement": "dell_2022",
+          "dimension": 1,
+          "name": "Structure and supply chains",
+          "snapshot": 3,
+          "disabled": 2,
+          "adaptive": 2,
+          "direction": "down"
+        },
+        {
+          "statement": "dell_2023",
+          "dimension": 1,
+          "name": "Structure and supply chains",
+          "snapshot": 4,
+          "disabled": 3,
+          "adaptive": 3,
+          "direction": "down"
+        },
+        {
+          "statement": "hiscox_2022",
+          "dimension": 5,
+          "name": "Effectiveness and KPIs",
+          "snapshot": 2,
+          "disabled": 3,
+          "adaptive": 3,
+          "direction": "up"
+        },
+        {
+          "statement": "hiscox_2022",
+          "dimension": 6,
+          "name": "Training",
+          "snapshot": 3,
+          "disabled": 2,
+          "adaptive": 2,
+          "direction": "down"
+        }
+      ]
+    },
+    "unstable": {
+      "count": 0,
+      "down": 0,
+      "up": 0,
+      "rows": []
+    }
+  },
+  "new_divergences_under_adaptive": [
+    {
+      "statement": "tesco_2024",
+      "dimension": 6,
+      "snapshot": 4,
+      "adaptive": 3
+    },
+    {
+      "statement": "canon_2022",
+      "dimension": 1,
+      "snapshot": 3,
+      "adaptive": 2
+    },
+    {
+      "statement": "hiscox_2022",
+      "dimension": 3,
+      "snapshot": 3,
+      "adaptive": 2
+    },
+    {
+      "statement": "hiscox_2023",
+      "dimension": 5,
+      "snapshot": 2,
+      "adaptive": 3
+    }
+  ],
+  "cost_usd": {
+    "combined_disabled_C_off": 0.9419,
+    "combined_adaptive_C_on": 1.001,
+    "premium_x": 1.06
+  },
+  "adaptive_tokens": {
+    "input": 213162,
+    "output": 57466,
+    "thinking": 0,
+    "total": 270628
+  },
+  "adaptive_live_calls": 33
+}

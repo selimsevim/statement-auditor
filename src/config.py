@@ -39,6 +39,11 @@ class Config:
     def hedge_lexicon(self) -> list[str]:
         return list(self._data["hedge_lexicon"])
 
+    @property
+    def pricing(self) -> dict[str, dict[str, float]]:
+        """Per-model $/1M-token pricing. Optional; used only by the scorer diff."""
+        return self._data.get("pricing", {})
+
     # --- resolved paths ---
     def path(self, key: str) -> Path:
         """Absolute path for a `paths.<key>` entry (relative to repo root)."""

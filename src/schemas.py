@@ -75,6 +75,14 @@ class BoilerplateResult(BaseModel):
     n_paragraphs: int | None = None
     n_unchanged_paragraphs: int | None = None
     boilerplate_share: float | None = None
+    similarity_method: str | None = Field(
+        default=None,
+        description="Paragraph similarity method used for YoY pairs: embedding or lexical.",
+    )
+    similarity_threshold: float | None = Field(
+        default=None,
+        description="Threshold used to mark paragraph pairs as unchanged.",
+    )
     hedge_density: float = Field(
         description="Hedge-lexicon occurrences per 1000 words across the document."
     )

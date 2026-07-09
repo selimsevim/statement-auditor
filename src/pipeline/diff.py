@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import argparse
 import re
+from difflib import SequenceMatcher
 from functools import lru_cache
 
 from ..config import Config, load_config
@@ -71,6 +72,31 @@ def max_similarities(cfg: Config, cur_paras: list[str], prev_paras: list[str]):
     return sim.max(axis=1), sim.argmax(axis=1)
 
 
+def lexical_max_similarities(cur_paras: list[str], prev_paras: list[str]) -> tuple[list[float], list[int]]:
+    """No-network fallback: max lexical similarity per current paragraph.
+
+    This is intentionally a fallback, not a semantic replacement for the
+    embedding model. It catches high-confidence copied/near-copied paragraphs so
+    a fresh run without a Hugging Face cache still produces a useful
+    boilerplate signal instead of dropping the metric entirely.
+    """
+    prev_norm = [" ".join(p.lower().split()) for p in prev_paras]
+    max_sim: list[float] = []
+    best_idx: list[int] = []
+    for cur in cur_paras:
+        cur_norm = " ".join(cur.lower().split())
+        best_score = -1.0
+        best = 0
+        for i, prev in enumerate(prev_norm):
+            score = SequenceMatcher(None, cur_norm, prev).ratio()
+            if score > best_score:
+                best_score = score
+                best = i
+        max_sim.append(best_score)
+        best_idx.append(best)
+    return max_sim, best_idx
+
+
 def prior_row(row: SourceRow, rows: list[SourceRow]) -> SourceRow | None:
     for r in rows:
         if r.company_slug == row.company_slug and r.year == row.year - 1:
@@ -95,18 +121,21 @@ def analyze_yoy(
         return BoilerplateResult(hedge_density=hedge), []
 
     threshold = float(cfg.thresholds["boilerplate_similarity"])
+    method = "embedding"
     cur_paras = paragraphs(text)
     prev_paras = paragraphs(text_path(cfg, prev).read_text(encoding="utf-8"))
     try:
         max_sim, best = max_similarities(cfg, cur_paras, prev_paras)
     except Exception as exc:  # embedding model unavailable (no network + no cache)
+        threshold = float(cfg.thresholds.get("lexical_boilerplate_similarity", 0.82))
+        method = "lexical"
         print(
-            f"    YoY skipped for {row.company_slug}_{row.year}: embedding model "
-            f"'{cfg.models['embedding']}' unavailable ({type(exc).__name__}). "
-            "Hedge density still reported; boilerplate share = n/a.",
+            f"    YoY fallback for {row.company_slug}_{row.year}: embedding model "
+            f"'{cfg.models['embedding']}' unavailable ({type(exc).__name__}); "
+            f"using lexical similarity >= {threshold}.",
             flush=True,
         )
-        return BoilerplateResult(prior_year=prev.year, hedge_density=hedge), []
+        max_sim, best = lexical_max_similarities(cur_paras, prev_paras)
 
     pairs = [
         ParagraphPair(
@@ -126,6 +155,8 @@ def analyze_yoy(
         n_paragraphs=len(cur_paras),
         n_unchanged_paragraphs=n_unchanged,
         boilerplate_share=share,
+        similarity_method=method,
+        similarity_threshold=threshold,
         hedge_density=hedge,
     )
     return result, pairs
@@ -193,9 +224,11 @@ def main() -> None:
         if bp.boilerplate_share is None:
             print("  boilerplate: n/a (no prior-year statement)")
         else:
+            method = bp.similarity_method or "embedding"
+            threshold = bp.similarity_threshold or cfg.thresholds["boilerplate_similarity"]
             print(f"  boilerplate share vs {bp.prior_year}: {bp.boilerplate_share} "
                   f"({bp.n_unchanged_paragraphs}/{bp.n_paragraphs} paragraphs "
-                  f">= {cfg.thresholds['boilerplate_similarity']} similarity)")
+                  f">= {threshold} {method} similarity)")
 
 
 if __name__ == "__main__":

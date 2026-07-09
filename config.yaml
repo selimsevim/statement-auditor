@@ -16,6 +16,11 @@ thresholds:
   # "USD 2.7m" vs "USD 3.6m", sim 0.920), which are not "substantially identical".
   # At >=0.95 every inspected flagged pair is genuine verbatim reuse.
   boilerplate_similarity: 0.95
+  # Fallback when the embedding model is unavailable (for example, no network
+  # and no local Hugging Face cache). This uses lexical similarity rather than
+  # semantic embeddings; calibrated on the committed consecutive-year pairs to
+  # preserve the same cap/no-cap decisions, not to exactly reproduce every pair.
+  lexical_boilerplate_similarity: 0.82
   # If the share of unchanged paragraphs exceeds this, cap the overall
   # score and raise the "substantially unchanged" flag.
   boilerplate_cap_share: 0.6
@@ -39,6 +44,31 @@ llm:
   # variance on borderline dimensions). Each sample is cached independently, so
   # re-runs are deterministic. Set to 1 to disable median-of-N.
   scoring_samples: 3
+  # Scoring architecture. False preserves the committed dashboard snapshot and
+  # runs the legacy one-LLM-call-per-dimension scorer. True opts into the newer
+  # combined scorer, which scores all six s.54(5) dimensions in ONE structured
+  # call per sample (median-of-3 is still applied per dimension), cutting Sonnet
+  # scoring calls ~6x. Override per run with `--scorer {combined,legacy}` on
+  # `src.run` / `src.pipeline.score`.
+  combined_scoring: false
+  # Thinking mode for the combined scorer's call: "disabled" (default; cheapest)
+  # or "adaptive". This is the lever the attribution analysis toggles: if the
+  # combined scorer's downgrades turn out to be thinking-off artifacts, flip to
+  # "adaptive" to recover them (keeps the ~5x call-count win; adds thinking
+  # output tokens). The two modes use separate cache namespaces (salt "c" vs
+  # "ca"), so switching never returns stale cross-mode results.
+  combined_scoring_thinking: disabled
+
+# Approximate API pricing in USD per 1,000,000 tokens. Used ONLY by the
+# scorer-diff cost estimate (src/diff_scorers.py); the pipeline itself never
+# reads this. Sonnet 5 intro pricing ($2/$10) applies through 2026-08-31.
+pricing:
+  claude-sonnet-5:
+    input: 2.0
+    output: 10.0
+  claude-haiku-4-5:
+    input: 1.0
+    output: 5.0
 
 # Hedge lexicon for the dimension-7 hedge-density metric
 # (occurrences per 1000 words across the whole document).

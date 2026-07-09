@@ -48,6 +48,7 @@ Two LLM passes (never one giant prompt), plus a computed diff:
 1. **Extraction** (`claude-haiku-4-5`) — pull verbatim claims per dimension into strict JSON. PDFs are read with PyMuPDF, whose block-level reading order keeps multi-column text contiguous so quotes stay verbatim.
 2. **Scoring** (`claude-sonnet-5`) — score each dimension 0–4 against the rubric, sampled 3× with the **median** taken (see stability note below). Cited evidence is **verified to exist verbatim** in the source, and the exact source span is stored and shown (never the model's paraphrase).
 3. **Boilerplate diff** — embed paragraphs (`all-MiniLM-L6-v2`), compute year-over-year paragraph similarity (threshold calibrated to 0.95), and measure hedge-word density.
+   If the embedding model is unavailable on a fresh no-network run, the diff falls back to a documented lexical-similarity threshold so the dashboard still gets a conservative boilerplate signal instead of `n/a`.
 
 All LLM responses are cached on (model, prompt hash), so re-runs are free and deterministic. Model names, thresholds, and the hedge lexicon all live in [`config.yaml`](config.yaml).
 
@@ -157,17 +158,32 @@ that each URL returns a real PDF and skips non-PDF landing pages.
 
 ## Methodology notes & known limitations
 
+**Scoring architecture (canonical vs combined audit path).** The committed
+dashboard snapshot uses the legacy per-dimension scorer (`llm.combined_scoring:
+false`) because it is the adjudicated, reproducible baseline for submission. A
+combined scorer is included as an opt-in optimization via `--scorer combined` or
+`llm.combined_scoring: true`: it scores all six dimensions in one structured
+call per sample, keeps the same median-of-N semantics, and cuts Sonnet scoring
+calls by ~5–6×. Because the combined scorer sees all claims at once, it can
+credit a cross-cutting claim to a dimension that had no own claims; such credit
+is **capped at 2** and flagged `fallback=True`, with the full-text fallback still
+available. The cap is the rubric's own 2→3 boundary: 3–4 require a *concrete
+mechanism (or metric) for this dimension*. `python -m src.diff_scorers` compares
+the combined scorer against the committed snapshot so any score movement is
+auditable before adopting it as the canonical path.
+
 **Score stability (median-of-3).** Claude Sonnet 5 does not accept a temperature
 parameter, so to tame run-to-run variance each dimension is scored 3× and the
 median is taken (`scoring_samples` in `config.yaml`). Each sample is cached
-independently, so **the committed cache, `data/statements.db`, and
-`dashboard/data.json` are the canonical snapshot** — re-running against the cache
-yields identical numbers. Median-of-3 *narrows* run-to-run variance but does not
-eliminate it (Sonnet 5 does not accept a `temperature` parameter): any dimension
-sitting near a rubric boundary — Policies (2 vs 3) most often, but also Structure
-and others — can shift by ±1 on a **cache-cleared / `--force`** re-run, moving a
-company's overall by ~0.15–0.2. Treat the committed snapshot as the reference; a
-fresh cold run is a *different valid sample*, not a bug.
+locally, so re-running against the same local cache yields identical numbers.
+For the public repo, **`dashboard/data.json` is the committed canonical
+snapshot**; generated caches and `data/statements.db` are intentionally ignored.
+Median-of-3 *narrows* run-to-run variance but does not eliminate it (Sonnet 5
+does not accept a `temperature` parameter): any dimension sitting near a rubric
+boundary — Policies (2 vs 3) most often, but also Structure and others — can
+shift by ±1 on a **cache-cleared / `--force`** re-run, moving a company's overall
+by ~0.15–0.2. Treat the committed snapshot as the reference; a fresh cold run is
+a *different valid sample*, not a bug.
 
 **Single-dimension classification + zero-claim fallback.** Pass 1 assigns each
 claim to exactly one dimension. A sentence touching two dimensions (e.g. "Tier 1

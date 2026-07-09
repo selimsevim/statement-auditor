@@ -24,6 +24,7 @@ CREATE TABLE IF NOT EXISTS statements (
   overall_score REAL, boilerplate_flag INTEGER, flags TEXT,
   prior_year INTEGER, boilerplate_share REAL,
   n_paragraphs INTEGER, n_unchanged INTEGER, hedge_density REAL,
+  similarity_method TEXT, similarity_threshold REAL,
   updated_at TEXT,
   PRIMARY KEY (slug, year)
 );
@@ -56,6 +57,11 @@ def connect(cfg: Config) -> sqlite3.Connection:
 
 def init_db(conn: sqlite3.Connection) -> None:
     conn.executescript(_SCHEMA)
+    cols = {r["name"] for r in conn.execute("PRAGMA table_info(statements)")}
+    if "similarity_method" not in cols:
+        conn.execute("ALTER TABLE statements ADD COLUMN similarity_method TEXT")
+    if "similarity_threshold" not in cols:
+        conn.execute("ALTER TABLE statements ADD COLUMN similarity_threshold REAL")
     conn.commit()
 
 
@@ -67,12 +73,17 @@ def save_statement(conn: sqlite3.Connection, score: StatementScore, pairs: list[
         conn.execute(f"DELETE FROM {tbl} WHERE slug=? AND year=?", (slug, year))
 
     conn.execute(
-        """INSERT INTO statements VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+        """INSERT INTO statements (
+          slug, year, company_name, sector, overall_score, boilerplate_flag, flags,
+          prior_year, boilerplate_share, n_paragraphs, n_unchanged, hedge_density,
+          similarity_method, similarity_threshold, updated_at
+        ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
         (
             slug, year, score.company_name, score.sector,
             score.overall_score, int(score.boilerplate_flag), json.dumps(score.flags),
             bp.prior_year, bp.boilerplate_share, bp.n_paragraphs, bp.n_unchanged_paragraphs,
-            bp.hedge_density, datetime.now(timezone.utc).isoformat(timespec="seconds"),
+            bp.hedge_density, bp.similarity_method, bp.similarity_threshold,
+            datetime.now(timezone.utc).isoformat(timespec="seconds"),
         ),
     )
     for ds in score.dimension_scores:
@@ -145,6 +156,8 @@ def export_json(cfg: Config, conn: sqlite3.Connection) -> Path:
             "boilerplate": {
                 "prior_year": s["prior_year"], "share": s["boilerplate_share"],
                 "n_paragraphs": s["n_paragraphs"], "n_unchanged": s["n_unchanged"],
+                "similarity_method": s["similarity_method"],
+                "similarity_threshold": s["similarity_threshold"],
                 "hedge_density": s["hedge_density"],
             },
             "dimensions": dims,
@@ -155,6 +168,7 @@ def export_json(cfg: Config, conn: sqlite3.Connection) -> Path:
     payload = {
         "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "boilerplate_similarity_threshold": cfg.thresholds["boilerplate_similarity"],
+        "lexical_boilerplate_similarity_threshold": cfg.thresholds.get("lexical_boilerplate_similarity"),
         "boilerplate_cap_share": cfg.thresholds["boilerplate_cap_share"],
         "statements": statements,
     }
