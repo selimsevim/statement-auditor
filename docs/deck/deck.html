@@ -1,0 +1,337 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Statement Auditor — Deck</title>
+<style>
+  :root{
+    --page:#0d0d0d; --surface:#161615; --surface-2:#1e1e1c;
+    --ink:#ffffff; --ink-2:#c3c2b7; --muted:#8a8880;
+    --border:rgba(255,255,255,0.11); --grid:#2c2c2a; --track:#26262400;
+    --accent:#3987e5; --critical:#e66767; --good:#37b87f; --amber:#d3a13a;
+    --serif:Georgia,"Times New Roman",serif;
+    --sans:system-ui,-apple-system,"Segoe UI",sans-serif;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  @page{size:1280px 720px; margin:0;}
+  html,body{background:#000;}
+  @media print{ .slide{-webkit-print-color-adjust:exact; print-color-adjust:exact;} }
+  .slide{
+    position:relative;
+    width:1280px; height:720px;
+    background:var(--page); color:var(--ink);
+    font-family:var(--sans); font-size:20px; line-height:1.5;
+    padding:64px 80px;
+    overflow:hidden;
+    page-break-after:always;
+    display:flex; flex-direction:column;
+  }
+  .slide:last-child{page-break-after:auto;}
+  /* accent hairline top */
+  .slide::before{content:"";position:absolute;top:0;left:0;right:0;height:4px;
+    background:linear-gradient(90deg,var(--accent) 0%,var(--accent) 60%,var(--critical) 100%);}
+  .kicker{font-size:14px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:var(--accent);margin-bottom:18px;}
+  h1{font-family:var(--serif);font-weight:600;font-size:64px;line-height:1.04;letter-spacing:-0.01em;}
+  h2{font-family:var(--serif);font-weight:600;font-size:40px;line-height:1.1;letter-spacing:-0.005em;margin-bottom:22px;}
+  p{color:var(--ink-2);}
+  .lead{font-size:23px;color:var(--ink-2);max-width:44ch;}
+  .foot{position:absolute;left:80px;right:80px;bottom:30px;display:flex;justify-content:space-between;
+    font-size:13px;color:var(--muted);letter-spacing:0.03em;border-top:1px solid var(--border);padding-top:12px;}
+  .foot .mark{font-family:var(--serif);}
+  b,strong{color:var(--ink);font-weight:600;}
+  .accent{color:var(--accent);} .crit{color:var(--critical);} .good{color:var(--good);}
+
+  /* ---- title slide ---- */
+  .title{justify-content:center;}
+  .title h1{font-size:80px;margin:8px 0 26px;}
+  .title .sub{font-size:26px;color:var(--ink-2);max-width:52ch;line-height:1.5;}
+  .title .disc{margin-top:34px;font-size:16px;color:var(--muted);max-width:64ch;border-left:3px solid var(--critical);padding-left:16px;}
+  .title .url{margin-top:40px;font-size:18px;}
+  .title .url a{color:var(--accent);text-decoration:none;font-weight:600;}
+  .title .url .repo{color:var(--muted);margin-left:22px;}
+
+  /* ---- generic layout helpers ---- */
+  .body{flex:1;display:flex;flex-direction:column;justify-content:center;}
+  .cols{display:grid;grid-template-columns:1fr 1fr;gap:44px;align-items:start;}
+  .cols3{display:grid;grid-template-columns:repeat(3,1fr);gap:26px;}
+  ul{list-style:none;}
+  li{position:relative;padding-left:30px;margin:16px 0;color:var(--ink-2);font-size:21px;}
+  li::before{content:"";position:absolute;left:2px;top:11px;width:9px;height:9px;border-radius:2px;background:var(--accent);}
+  li b{color:var(--ink);}
+
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px 26px;}
+  .card .n{font-family:var(--serif);font-size:15px;color:var(--muted);letter-spacing:0.03em;}
+  .card h3{font-size:21px;font-weight:600;margin:6px 0 8px;color:var(--ink);}
+  .card p{font-size:16px;color:var(--ink-2);line-height:1.45;}
+  .card .step{display:inline-block;font-size:12px;font-weight:700;letter-spacing:0.08em;color:var(--accent);
+    border:1px solid var(--accent);border-radius:999px;padding:3px 10px;margin-bottom:12px;}
+
+  /* stat tiles */
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;margin-top:8px;}
+  .stat{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:22px 22px;}
+  .stat .v{font-size:46px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-0.02em;line-height:1;}
+  .stat .k{font-size:14px;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-top:10px;}
+
+  /* leaderboard bars */
+  .board{display:flex;flex-direction:column;gap:11px;margin-top:6px;}
+  .brow{display:grid;grid-template-columns:230px 1fr 56px;align-items:center;gap:16px;}
+  .brow .co{font-size:17px;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .brow .co b{color:var(--ink);}
+  .brow .bar{height:16px;background:#242422;border-radius:5px;overflow:hidden;}
+  .brow .fill{display:block;height:100%;border-radius:5px;background:var(--accent);}
+  .brow .fill.cap{background:var(--critical);}
+  .brow .fill.top{background:var(--good);}
+  .brow .sc{font-variant-numeric:tabular-nums;font-weight:700;font-size:18px;text-align:right;}
+  .ring{display:inline-block;width:9px;height:9px;border-radius:50%;border:2px solid var(--critical);margin-left:7px;vertical-align:middle;}
+
+  /* dimension mini-bars (Dell / SG) */
+  .dims{display:flex;flex-direction:column;gap:9px;}
+  .drow{display:grid;grid-template-columns:150px 1fr 26px;align-items:center;gap:12px;font-size:15px;}
+  .drow .dn{color:var(--ink-2);white-space:nowrap;}
+  .drow .dt{height:12px;background:#242422;border-radius:4px;overflow:hidden;}
+  .drow .df{display:block;height:100%;background:var(--accent);border-radius:4px;}
+  .drow .df.zero{background:#3a3a37;}
+  .drow .dv{font-variant-numeric:tabular-nums;font-weight:700;text-align:right;}
+
+  .callout{border:1px solid var(--border);border-left:4px solid var(--critical);background:var(--surface);
+    border-radius:0 12px 12px 0;padding:20px 24px;margin-top:6px;}
+  .callout .l{font-weight:700;font-size:19px;color:var(--ink);}
+  .callout .b{color:var(--ink-2);font-size:17px;margin-top:6px;line-height:1.5;}
+  .big-num{font-size:150px;font-weight:700;font-family:var(--serif);line-height:0.9;letter-spacing:-0.03em;}
+  .arrow{font-size:26px;font-weight:700;color:var(--critical);}
+  .quote{font-family:var(--serif);font-size:19px;color:var(--ink);font-style:italic;line-height:1.5;
+    border-left:3px solid var(--accent);padding-left:18px;margin:4px 0;}
+  .badge{display:inline-block;font-size:13px;font-weight:600;padding:3px 10px;border-radius:999px;border:1px solid var(--border);color:var(--ink-2);}
+  .tag{color:var(--muted);font-size:15px;}
+</style>
+</head>
+<body>
+
+<!-- 1 · TITLE -->
+<section class="slide title">
+  <div class="kicker">Modern Slavery Statement Analysis</div>
+  <h1>Statement Auditor</h1>
+  <p class="sub">Scores public corporate modern-slavery statements on <b>disclosure quality</b> — how specific and substantiated they are — and catches when a company just re-files last year's.</p>
+  <p class="disc">Automated analysis of public statements — <b>not a legal assessment</b>. It measures statement quality and disclosure specificity. It never asserts that any company uses forced labour.</p>
+  <div class="url">
+    <a href="https://selimsevim.github.io/statement-auditor/">selimsevim.github.io/statement-auditor</a>
+    <span class="repo">github.com/selimsevim/statement-auditor</span>
+  </div>
+</section>
+
+<!-- 2 · PROBLEM -->
+<section class="slide">
+  <div class="kicker">The problem</div>
+  <div class="body">
+    <h2>The law requires a statement.<br>It doesn't grade one.</h2>
+    <div class="cols">
+      <ul>
+        <li>Every large UK company must publish a modern-slavery statement. <b>Thousands do</b> — the registry holds 100,000+.</li>
+        <li>Nobody reads them at scale, and <b>the Act doesn't measure quality</b>.</li>
+        <li>So a company can file <b>four pages of boilerplate</b>, or re-file last year's, and tick the box.</li>
+      </ul>
+      <div class="card">
+        <div class="n">UK Modern Slavery Act 2015 — s.54(5)</div>
+        <h3>Six recommended content areas</h3>
+        <p>Structure &amp; supply chains · Policies · Due diligence · Risk assessment · Effectiveness &amp; KPIs · Training.</p>
+        <p style="margin-top:12px">The Act <b>recommends</b> what to disclose but sets <b>no bar</b> for how well. That gap is what we score.</p>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><span>The problem</span><span class="mark">Statement Auditor · 02</span></div>
+</section>
+
+<!-- 3 · WHAT IT SCORES -->
+<section class="slide">
+  <div class="kicker">What it scores</div>
+  <div class="body">
+    <h2>Seven dimensions, anchored to the Act</h2>
+    <div class="cols" style="grid-template-columns:1.15fr 0.85fr;">
+      <div>
+        <ul style="columns:1;">
+          <li><b>1–6</b> map directly to s.54(5)'s six content areas, each scored <b>0–4</b> against our rubric.</li>
+          <li><b>7 · Boilerplate</b> is <b>computed</b>, not LLM-scored — year-over-year paragraph reuse.</li>
+          <li><b>Overall</b> = mean of dimensions 1–6, <b>penalised by boilerplate</b>.</li>
+          <li>If &gt;60% of paragraphs are carried over, the overall is <b class="crit">capped at 2.0</b> and flagged.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="n">Rubric · dimensions 1–6</div>
+        <div class="dims" style="margin-top:12px">
+          <div class="drow"><span class="dn">4 · measurable</span><span class="dt"><span class="df" style="width:100%"></span></span><span class="dv">4</span></div>
+          <div class="drow"><span class="dn">3 · mechanisms</span><span class="dt"><span class="df" style="width:75%"></span></span><span class="dv">3</span></div>
+          <div class="drow"><span class="dn">2 · commitments</span><span class="dt"><span class="df" style="width:50%"></span></span><span class="dv">2</span></div>
+          <div class="drow"><span class="dn">1 · mentioned</span><span class="dt"><span class="df" style="width:25%"></span></span><span class="dv">1</span></div>
+          <div class="drow"><span class="dn">0 · not addressed</span><span class="dt"><span class="df zero" style="width:6%"></span></span><span class="dv">0</span></div>
+        </div>
+        <p style="margin-top:14px;font-size:14px">4 needs a concrete mechanism <b>plus</b> measurable evidence; 3 a mechanism; 2 only general commitments.</p>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><span>What it scores</span><span class="mark">Statement Auditor · 03</span></div>
+</section>
+
+<!-- 4 · HOW IT WORKS -->
+<section class="slide">
+  <div class="kicker">How it works</div>
+  <div class="body">
+    <h2>Two LLM passes, never one giant prompt</h2>
+    <div class="cols3">
+      <div class="card">
+        <span class="step">PASS 1 · EXTRACT</span>
+        <h3>Claims</h3>
+        <p><b>Claude Haiku 4.5</b> pulls verbatim claims per dimension into strict JSON. PDFs read column-aware with PyMuPDF so quotes stay intact.</p>
+      </div>
+      <div class="card">
+        <span class="step">PASS 2 · SCORE</span>
+        <h3>Rubric 0–4</h3>
+        <p><b>Claude Sonnet 5</b> scores each dimension, sampled <b>3×</b> with the median taken. Every cited quote is <b>verified verbatim</b> in the source — or dropped.</p>
+      </div>
+      <div class="card">
+        <span class="step">COMPUTED</span>
+        <h3>Boilerplate diff</h3>
+        <p>Paragraph embeddings (<b>all-MiniLM-L6-v2</b>), year-over-year cosine similarity at a <b>0.95</b> calibrated threshold, plus hedge-word density.</p>
+      </div>
+    </div>
+    <p style="margin-top:26px;font-size:19px">All LLM responses are cached on <b>(model, prompt hash)</b> — re-runs are free and the committed snapshot is deterministic.</p>
+  </div>
+  <div class="foot"><span>How it works</span><span class="mark">Statement Auditor · 04</span></div>
+</section>
+
+<!-- 5 · RESULTS -->
+<section class="slide">
+  <div class="kicker">Results</div>
+  <div class="body">
+    <h2>11 statements · 7 companies · scored 1.5 → 3.5</h2>
+    <div class="cols" style="grid-template-columns:1fr 0.62fr;gap:40px;">
+      <div class="board">
+        <div class="brow"><span class="co"><b>Canon Europe</b> · 2022</span><span class="bar"><span class="fill top" style="width:87.5%"></span></span><span class="sc">3.5</span></div>
+        <div class="brow"><span class="co"><b>Tesco PLC</b> · 2024</span><span class="bar"><span class="fill" style="width:87.5%"></span></span><span class="sc">3.5</span></div>
+        <div class="brow"><span class="co"><b>Barclays PLC</b> · 2024</span><span class="bar"><span class="fill" style="width:83.3%"></span></span><span class="sc">3.3</span></div>
+        <div class="brow"><span class="co"><b>Dell Technologies</b> · 2022</span><span class="bar"><span class="fill" style="width:79.3%"></span></span><span class="sc">3.2</span></div>
+        <div class="brow"><span class="co"><b>Damen Shipyards</b> · 2022</span><span class="bar"><span class="fill" style="width:54.3%"></span></span><span class="sc">2.2</span></div>
+        <div class="brow"><span class="co"><b>Dell Technologies</b> · 2023 <span class="ring"></span></span><span class="bar"><span class="fill cap" style="width:50%"></span></span><span class="sc crit">2.0</span></div>
+        <div class="brow"><span class="co"><b>Siemens Gamesa</b> · 2022</span><span class="bar"><span class="fill" style="width:37.5%"></span></span><span class="sc">1.5</span></div>
+      </div>
+      <div>
+        <div class="stats" style="grid-template-columns:1fr 1fr;">
+          <div class="stat"><div class="v">11</div><div class="k">Statements</div></div>
+          <div class="stat"><div class="v">7</div><div class="k">Companies</div></div>
+          <div class="stat"><div class="v">6</div><div class="k">YoY pairs</div></div>
+          <div class="stat"><div class="v crit">1</div><div class="k">Capped</div></div>
+        </div>
+        <p style="margin-top:20px;font-size:16px">Sampled from the UK government's official <b>Modern Slavery Registry</b> CSV export — consecutive-year pairs, not hand-picked. <span class="crit">◯</span> red ring = boilerplate-capped.</p>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><span>Results</span><span class="mark">Statement Auditor · 05</span></div>
+</section>
+
+<!-- 6 · THE MONEY SHOT: DELL -->
+<section class="slide">
+  <div class="kicker crit" style="color:var(--critical)">The accountability gap</div>
+  <div class="body">
+    <h2>Dell 2023: well-written, and recycled</h2>
+    <div class="cols" style="grid-template-columns:0.8fr 1.2fr;gap:44px;align-items:center;">
+      <div style="text-align:center">
+        <div class="tag" style="margin-bottom:6px">Raw mean of dimensions 1–6</div>
+        <div style="display:flex;align-items:baseline;justify-content:center;gap:18px">
+          <span class="big-num" style="font-size:96px;color:var(--muted)">3.5</span>
+          <span class="arrow">→</span>
+          <span class="big-num" style="font-size:96px;color:var(--critical)">2.0</span>
+        </div>
+        <div class="tag" style="margin-top:8px">Overall, after boilerplate cap · <b class="crit">YoY ▼ 1.17</b></div>
+        <div class="dims" style="margin-top:22px;text-align:left">
+          <div class="drow"><span class="dn">Structure</span><span class="dt"><span class="df" style="width:100%"></span></span><span class="dv">4</span></div>
+          <div class="drow"><span class="dn">Due diligence</span><span class="dt"><span class="df" style="width:100%"></span></span><span class="dv">4</span></div>
+          <div class="drow"><span class="dn">KPIs</span><span class="dt"><span class="df" style="width:100%"></span></span><span class="dv">4</span></div>
+          <div class="drow"><span class="dn">Training</span><span class="dt"><span class="df" style="width:100%"></span></span><span class="dv">4</span></div>
+        </div>
+      </div>
+      <div>
+        <div class="callout">
+          <div class="l">70% carried over from 2022</div>
+          <div class="b"><b>39 of 56 paragraphs</b> are substantially identical to the prior year. They re-filed the document and changed a few numbers.</div>
+        </div>
+        <p style="margin-top:22px;font-size:18px">This isn't a guess: every paragraph is embedded and must clear <b>95% cosine similarity</b> — a threshold calibrated by hand against real pairs. Above 60% carried over, the overall is capped at 2.0.</p>
+        <p style="margin-top:14px;font-size:18px"><b>That's the gap the raw score would hide</b> — and exactly what box-ticking compliance misses.</p>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><span>The accountability gap · Dell 2023</span><span class="mark">Statement Auditor · 06</span></div>
+</section>
+
+<!-- 7 · EVIDENCE -->
+<section class="slide">
+  <div class="kicker">Evidence you can trust</div>
+  <div class="body">
+    <h2>Every score cites the source's own words</h2>
+    <div class="cols">
+      <ul>
+        <li>Each dimension expands to its <b>justification and verbatim evidence</b> — the exact span sliced from the PDF text.</li>
+        <li>The scoring model <b>can't invent a quote</b>: if a cited quote doesn't string-match the source, we drop it.</li>
+        <li>If a dimension loses all its evidence, it's <b>scored 0</b>. No hallucinated praise.</li>
+        <li>The dashboard highlights by <b>stored character offset</b> — never re-matched in the browser.</li>
+      </ul>
+      <div>
+        <div class="quote">"…verified to appear verbatim in the extracted source text, highlighted by the character offset stored at scoring time."</div>
+        <div style="margin-top:22px;display:flex;gap:10px;flex-wrap:wrap">
+          <span class="badge" style="border-color:var(--good);color:var(--good)">✓ source-verified</span>
+          <span class="badge">quote dropped if unmatched</span>
+          <span class="badge">no evidence → 0</span>
+        </div>
+        <p style="margin-top:22px;font-size:16px">A reviewer opening the original PDF finds the exact sentence — cosmetic differences (case, bullets, hyphenation) tolerated, wording never paraphrased.</p>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><span>Evidence you can trust</span><span class="mark">Statement Auditor · 07</span></div>
+</section>
+
+<!-- 8 · CONTRAST: SIEMENS GAMESA -->
+<section class="slide">
+  <div class="kicker">The other end</div>
+  <div class="body">
+    <h2>Siemens Gamesa 2022 — a clean 1.5</h2>
+    <div class="cols" style="grid-template-columns:1fr 1fr;gap:44px;align-items:center;">
+      <div>
+        <p style="font-size:20px">A multi-billion-euro wind-turbine maker, four-page statement. It has <b class="crit">no measurable KPIs at all</b> — a genuine zero, not a pipeline miss.</p>
+        <p style="margin-top:18px;font-size:18px">We're honest about our own pipeline: <b>fallback</b> tags mean a dimension had no extracted claims, so we re-read the whole statement to avoid a false zero — <b>capped at 2</b>, because a passing mention isn't a mechanism.</p>
+        <div style="margin-top:18px;display:flex;gap:10px">
+          <span class="badge">fallback · risk</span>
+          <span class="badge">fallback · training</span>
+        </div>
+      </div>
+      <div class="card">
+        <div class="n">Dimensions 1–6</div>
+        <div class="dims" style="margin-top:14px">
+          <div class="drow"><span class="dn">Structure</span><span class="dt"><span class="df" style="width:25%"></span></span><span class="dv">1</span></div>
+          <div class="drow"><span class="dn">Policies</span><span class="dt"><span class="df" style="width:75%"></span></span><span class="dv">3</span></div>
+          <div class="drow"><span class="dn">Due diligence</span><span class="dt"><span class="df" style="width:75%"></span></span><span class="dv">3</span></div>
+          <div class="drow"><span class="dn">Risk</span><span class="dt"><span class="df" style="width:25%"></span></span><span class="dv">1</span></div>
+          <div class="drow"><span class="dn">KPIs</span><span class="dt"><span class="df zero" style="width:6%"></span></span><span class="dv crit">0</span></div>
+          <div class="drow"><span class="dn">Training</span><span class="dt"><span class="df" style="width:25%"></span></span><span class="dv">1</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><span>The other end · Siemens Gamesa 2022</span><span class="mark">Statement Auditor · 08</span></div>
+</section>
+
+<!-- 9 · CLOSE -->
+<section class="slide title" style="justify-content:center">
+  <div class="kicker">The accountability layer that's missing</div>
+  <h1 style="font-size:56px;max-width:20ch">Grounded in the law. Every score backed by evidence.</h1>
+  <div class="cols3" style="margin-top:38px">
+    <div class="card"><h3 class="good">Grounded</h3><p>Rubric anchored to UK MSA s.54(5) — not an invented checklist.</p></div>
+    <div class="card"><h3 class="accent">Verifiable</h3><p>Every score cites a verbatim, source-matched quote — or scores 0.</p></div>
+    <div class="card"><h3 class="crit">Catches recycling</h3><p>Surfaces the boilerplate that box-ticking compliance misses.</p></div>
+  </div>
+  <p style="margin-top:34px;font-size:20px;color:var(--ink-2)">The registry has <b>100,000+ statements</b>. This scores any of them — per-statement and cache-backed.</p>
+  <div class="url" style="margin-top:30px">
+    <a href="https://selimsevim.github.io/statement-auditor/">Live demo → selimsevim.github.io/statement-auditor</a>
+    <span class="repo">github.com/selimsevim/statement-auditor</span>
+  </div>
+</section>
+
+</body>
+</html>

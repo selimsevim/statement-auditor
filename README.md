@@ -5,6 +5,8 @@ fixed accountability taxonomy anchored to the UK Modern Slavery Act, and
 presents the results in a comparative dashboard with sentence-level evidence and
 year-over-year boilerplate detection.
 
+**[▶ Live demo](https://selimsevim.github.io/statement-auditor/)** · **[Slide deck (PDF)](docs/deck/statement-auditor-deck.pdf)**
+
 > **Automated analysis of public statements — not a legal assessment.** This
 > tool measures **statement quality** and **disclosure specificity**. It never
 > asserts that any company uses forced labour.
@@ -160,7 +162,7 @@ that each URL returns a real PDF and skips non-PDF landing pages.
 
 **Scoring architecture (canonical vs combined audit path).** The committed
 dashboard snapshot uses the legacy per-dimension scorer (`llm.combined_scoring:
-false`) because it is the adjudicated, reproducible baseline for submission. A
+false`) because it is the adjudicated, reproducible baseline. A
 combined scorer is included as an opt-in optimization via `--scorer combined` or
 `llm.combined_scoring: true`: it scores all six dimensions in one structured
 call per sample, keeps the same median-of-N semantics, and cuts Sonnet scoring
@@ -207,15 +209,6 @@ the PDF finds it.
 boundary admitted paragraphs where only figures changed ("USD 2.7m" vs "USD
 3.6m"); at ≥0.95 every flagged pair is genuine verbatim reuse.
 
-## Build status
+## License
 
-Built incrementally, verifying each stage on real data before the next:
-
-- [x] **1. Schemas, config, repo skeleton**
-- [x] **2. `fetch.py` + `extract.py`** — verified on real PDFs (PyMuPDF, column-aware; 403 → skip)
-- [x] **3. `claims.py`** — 87–96% verbatim-match extraction
-- [x] **4. `score.py`** — rubric scoring, evidence verifier, median-of-3, zero-claim fallback
-- [x] **5. `diff.py`** — YoY boilerplate (calibrated threshold) + hedge density
-- [x] **6. SQLite persistence + `run.py` CLI** — end-to-end batch of 6 statements
-- [x] **7. Dashboard** — overview trajectory chart + click-through company detail (evidence, gaps, YoY); light/dark, verified
-- [x] **8. Full registry batch + acceptance pass** — 11 statements / 7 companies; consecutive-year pairs sampled from the registry's CSV export; all four acceptance criteria verified
+Released under the [MIT License](LICENSE) — © 2026 Selim Sevim.
